@@ -70,7 +70,7 @@ export async function buildDigest(config: DigestConfig): Promise<DigestData> {
 
   // Load entity names
   let entityNames = new Map<string, string>();
-  if (articleEntities && articleEntities.length > 0) {
+  if (articleEntities && Array.isArray(articleEntities) && articleEntities.length > 0) {
     const entityIds = [...new Set((articleEntities as ArticleEntityRow[]).map((e) => e.entity_id))];
     const { data: entities } = await db
       .from("entities")

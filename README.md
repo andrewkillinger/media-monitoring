@@ -20,7 +20,7 @@ Internal media and social media monitoring platform for Acadia Pharmaceuticals. 
 | Framework | Next.js 15 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 + shadcn/ui primitives |
-| Database | Supabase (Postgres + Auth + Storage + RLS) |
+| Database | PostgreSQL (local) |
 | Tables | TanStack Table |
 | Charts | Recharts |
 | Validation | Zod |
@@ -35,7 +35,7 @@ Internal media and social media monitoring platform for Acadia Pharmaceuticals. 
 
 - Node.js 22+
 - pnpm 10+
-- A Supabase project (free tier works for development)
+- PostgreSQL 14+ installed and running locally
 
 ### 1. Clone and install
 
@@ -51,64 +51,29 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Edit `.env.local` with your Supabase credentials:
+Edit `.env.local` with your local PostgreSQL connection:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+DATABASE_URL=postgresql://acadia:acadia@localhost:5432/media_monitoring
 CRON_SECRET=any-secret-string-for-cron-auth
 ```
 
 ### 3. Set up the database
 
-Apply migrations in order to your Supabase project. You can use the Supabase Dashboard SQL Editor or the CLI:
+Run the setup script to create the database, apply all migrations, and seed demo data:
 
 ```bash
-# Using Supabase CLI (if installed):
-supabase db push
-
-# Or manually apply each migration file in supabase/migrations/ in numeric order
-# via the Supabase Dashboard > SQL Editor
+pnpm db:setup
 ```
 
-### 4. Seed the database
+This will:
+- Create the `media_monitoring` database and `acadia` user
+- Apply all 32 migration files (schema, indexes, functions)
+- Seed entities, competitors, outlets, rules, schedules, and demo articles
 
-Run the seed files in order from `supabase/seed/`:
+> **Note:** The script uses `psql` and connects as the `postgres` superuser to create the database. If your PostgreSQL is configured differently, set `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_NAME` environment variables.
 
-```bash
-# Files should be run in numeric order:
-# 01_disease_states.sql
-# 02_entities.sql
-# 03_entity_aliases.sql
-# 04_entity_disease_states.sql
-# 05_sections.sql
-# 06_outlets.sql
-# 07_outlet_lists.sql
-# 08_rules.sql
-# 09_schedules.sql
-# 10_demo_articles.sql
-# 11_source_adapters.sql
-```
-
-This populates:
-- Disease states (Rett, Parkinson's, Alzheimer's, Schizophrenia, Prader-Willi, Fragile X, and optional sections)
-- All competitor entities with aliases (50+ companies and products)
-- Priority outlets (US, Canada, EU, French-language)
-- Classification rules (25+ rules for inclusion/exclusion/assignment)
-- Report schedules
-- Demo articles for immediate UI testing
-
-### 5. Create an admin user
-
-1. Go to your Supabase Dashboard > Authentication > Users
-2. Create a new user with email/password
-3. In the SQL Editor, update their role:
-   ```sql
-   UPDATE profiles SET role = 'admin' WHERE email = 'your-email@acadia.com';
-   ```
-
-### 6. Run the dev server
+### 4. Run the dev server
 
 ```bash
 pnpm dev
@@ -195,17 +160,14 @@ The schema includes 27 tables organized around these concepts:
 - **Output**: digest_runs, digest_items, schedules, alert_recipients
 - **System**: profiles (auth), attachments, audit_log
 
-All tables have Row Level Security (RLS) enabled with role-based policies (admin, editor, reviewer).
+No authentication is required — the app is open access for internal use.
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (server-only) |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `CRON_SECRET` | Yes | Secret for authenticating cron/ingestion API calls |
-| `ALLOWED_EMAIL_DOMAINS` | No | Comma-separated domains for signup restriction |
 | `OPENAI_API_KEY` | No | Enables AI summarization and classification assistance |
 | `AI_MODEL` | No | AI model to use (default: gpt-4o-mini) |
 | `SMTP_HOST` | No | SMTP server for email delivery |
