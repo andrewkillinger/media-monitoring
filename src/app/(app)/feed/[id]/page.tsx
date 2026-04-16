@@ -121,17 +121,30 @@ export default function ArticleDetailPage() {
               <span>·</span>
               <span>{article.date}</span>
               <span>·</span>
-              <a
-                href={article.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[var(--primary)] hover:underline"
-              >
-                View Source
-                <ExternalLink className="h-3 w-3" />
-              </a>
+              {article.isDemoUrl ? (
+                <span className="inline-flex items-center gap-1 text-[var(--muted-foreground)] text-xs">
+                  Demo article — source URL not available
+                </span>
+              ) : (
+                <a
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[var(--accent)] hover:underline"
+                >
+                  View Source
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
             </div>
           </div>
+
+          {/* Summary */}
+          {article.summary && (
+            <div className="border-l-2 border-[var(--accent)] pl-4 py-1">
+              <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">{article.summary}</p>
+            </div>
+          )}
 
           {/* Badges row */}
           <div className="flex flex-wrap gap-2">

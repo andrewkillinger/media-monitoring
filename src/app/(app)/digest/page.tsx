@@ -1,9 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { demoArticles } from "@/lib/demo-data";
+import { demoArticles, demoSections } from "@/lib/demo-data";
+
+// Acadia brand palette
+const BLUE_SPRUCE = "#084A51";
+const TURQUOISE = "#068798";
+const TANGERINE = "#F56A00";
+const GLACIER = "#6BC8C7";
 
 const DIGEST_SECTIONS = [
   {
@@ -75,28 +82,50 @@ function formatArticleDate(isoDate: string): string {
 }
 
 interface ArticleItemProps {
+  id: string;
   title: string;
   outlet: string;
   date: string;
-  url: string;
+  summary: string;
+  isDemoUrl?: boolean;
 }
 
-function ArticleItem({ title, outlet, date, url }: ArticleItemProps) {
+function ArticleItem({ id, title, outlet, date, summary, isDemoUrl }: ArticleItemProps) {
   return (
-    <div className="py-2.5 border-b border-slate-100 last:border-0">
-      <div className="text-xs text-slate-500 mb-0.5">
-        <span className="font-semibold text-slate-700">{outlet}</span>
-        {" · "}
-        {formatArticleDate(date)}
+    <div className="py-3 border-b last:border-0" style={{ borderColor: "#e8f4f5" }}>
+      <div className="flex items-baseline gap-1.5 mb-0.5 flex-wrap">
+        <span className="text-xs font-bold" style={{ color: BLUE_SPRUCE }}>
+          {outlet}
+        </span>
+        <span className="text-xs" style={{ color: "#94a3b8" }}>
+          &middot; {formatArticleDate(date)}
+        </span>
       </div>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm text-blue-700 hover:text-blue-900 hover:underline leading-snug"
-      >
-        {title}
-      </a>
+      {isDemoUrl ? (
+        <Link
+          href={`/feed/${id}`}
+          className="text-sm font-medium leading-snug hover:underline"
+          style={{ color: TURQUOISE }}
+        >
+          {title}
+        </Link>
+      ) : (
+        <a
+          href="#"
+          className="text-sm font-medium leading-snug hover:underline"
+          style={{ color: TURQUOISE }}
+        >
+          {title}
+        </a>
+      )}
+      {summary && (
+        <p
+          className="text-xs mt-0.5 leading-relaxed line-clamp-1"
+          style={{ color: "#64748b" }}
+        >
+          {summary}
+        </p>
+      )}
     </div>
   );
 }
@@ -105,15 +134,11 @@ export default function DigestPage() {
   const [selectedDate, setSelectedDate] = useState("2025-04-15");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied-html" | "copied-md">("idle");
 
-  // Filter published articles for the selected date range
-  // For the digest we include articles from the prior day through selected date
-  const publishedArticles = useMemo(() => {
+  // Filter to published or reviewed articles (exclude excluded/classified)
+  const includedArticles = useMemo(() => {
     return demoArticles.filter(
       (a) =>
-        a.status === "published" &&
-        !a.flagType &&
-        !a.isPaywalled &&
-        a.date >= "2025-04-14" &&
+        (a.status === "published" || a.status === "reviewed") &&
         a.date <= selectedDate
     );
   }, [selectedDate]);
@@ -132,7 +157,7 @@ export default function DigestPage() {
         map[sec.sectionKey]["__all__"] = [];
       }
     }
-    for (const article of publishedArticles) {
+    for (const article of includedArticles) {
       const secMap = map[article.section];
       if (!secMap) continue;
       if (article.subsection && secMap[article.subsection] !== undefined) {
@@ -142,22 +167,29 @@ export default function DigestPage() {
       }
     }
     return map;
-  }, [publishedArticles]);
+  }, [includedArticles]);
 
-  const totalArticles = publishedArticles.length;
+  const totalArticles = includedArticles.length;
   const displayDate = formatDisplayDate(selectedDate);
 
-  // Build newsletter HTML string for copy
+  // Build newsletter HTML for copy
   function buildHtml(): string {
     let html = `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Acadia Media Monitor - ${displayDate}</title></head>
-<body style="font-family:Georgia,serif;max-width:680px;margin:0 auto;padding:32px 24px;color:#1e293b;">
-<div style="border-bottom:3px solid #1e40af;padding-bottom:16px;margin-bottom:24px;">
-  <h1 style="font-size:22px;font-weight:700;color:#1e40af;margin:0 0 4px;">Acadia Media Monitor</h1>
-  <p style="font-size:14px;color:#64748b;margin:0;">${displayDate}</p>
+<head><meta charset="utf-8"><title>ACADIA MEDIA MONITOR — ${displayDate}</title></head>
+<body style="font-family:Georgia,serif;max-width:680px;margin:0 auto;padding:0;color:#1e293b;">
+<div style="background:${BLUE_SPRUCE};padding:28px 32px 24px;">
+  <p style="font-size:11px;font-weight:700;color:${GLACIER};text-transform:uppercase;letter-spacing:0.12em;margin:0 0 6px;">Internal Communications</p>
+  <h1 style="font-size:24px;font-weight:800;color:#ffffff;letter-spacing:0.04em;margin:0 0 4px;text-transform:uppercase;">ACADIA MEDIA MONITOR</h1>
+  <div style="height:2px;background:${TANGERINE};margin:10px 0 12px;"></div>
+  <p style="font-size:13px;color:${GLACIER};margin:0;">${displayDate} &nbsp;&middot;&nbsp; Daily Digest</p>
 </div>
-<p style="font-size:13px;color:#475569;margin-bottom:24px;">Coverage period: April 14–15, 2025 &nbsp;|&nbsp; ${totalArticles} items included</p>
+<div style="padding:20px 32px 16px;background:#f0f9fa;border-bottom:1px solid #cce8ea;">
+  <p style="font-size:13px;color:#475569;margin:0;padding:0 0 0 12px;border-left:3px solid ${TURQUOISE};line-height:1.7;">
+    Today&apos;s digest covers ${totalArticles} articles. Coverage includes Acadia corporate news, therapeutic area updates across Rett Syndrome, Parkinson&apos;s Disease, Alzheimer&apos;s Disease, and broader news of interest.
+  </p>
+</div>
+<div style="padding:24px 32px;">
 `;
 
     for (const sec of DIGEST_SECTIONS) {
@@ -165,7 +197,7 @@ export default function DigestPage() {
       const hasSubsections = sec.subsections !== null;
 
       html += `<div style="margin-bottom:28px;">
-  <h2 style="font-size:15px;font-weight:700;color:#1e293b;border-bottom:1px solid #cbd5e1;padding-bottom:6px;margin-bottom:12px;">${sec.name}</h2>\n`;
+  <h2 style="font-size:15px;font-weight:700;color:${BLUE_SPRUCE};border-bottom:2px solid ${TURQUOISE};padding-bottom:6px;margin-bottom:12px;text-transform:none;">${sec.name}</h2>\n`;
 
       if (hasSubsections && sec.subsections) {
         let hasAny = false;
@@ -173,42 +205,47 @@ export default function DigestPage() {
           const items = secData[sub] || [];
           if (items.length > 0) {
             hasAny = true;
-            html += `  <p style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.05em;margin:10px 0 6px;">${sub}</p>\n`;
+            html += `  <p style="font-size:10px;font-weight:700;color:${TURQUOISE};text-transform:uppercase;letter-spacing:0.1em;margin:12px 0 6px;">${sub}</p>\n`;
             for (const a of items) {
-              html += `  <div style="padding:6px 0;border-bottom:1px solid #f1f5f9;">
-    <span style="font-size:11px;color:#64748b;"><strong>${a.outlet}</strong> &middot; ${formatArticleDate(a.date)}</span><br>
-    <a href="${a.url}" style="font-size:13px;color:#1e40af;">${a.title}</a>
+              html += `  <div style="padding:8px 0;border-bottom:1px solid #e8f4f5;">
+    <span style="font-size:11px;color:#64748b;"><strong style="color:${BLUE_SPRUCE};">${a.outlet}</strong> &middot; ${formatArticleDate(a.date)}</span><br>
+    <a href="/feed/${a.id}" style="font-size:13px;color:${TURQUOISE};text-decoration:none;">${a.title}</a><br>
+    <span style="font-size:11px;color:#64748b;">${a.summary}</span>
   </div>\n`;
             }
           }
         }
         if (!hasAny) {
-          html += `  <p style="font-size:13px;color:#64748b;font-style:italic;">No relevant news to report.</p>\n`;
+          html += `  <p style="font-size:13px;color:#94a3b8;font-style:italic;">No relevant news to report.</p>\n`;
         }
       } else {
         const items = secData["__all__"] || [];
         if (items.length > 0) {
           for (const a of items) {
-            html += `  <div style="padding:6px 0;border-bottom:1px solid #f1f5f9;">
-    <span style="font-size:11px;color:#64748b;"><strong>${a.outlet}</strong> &middot; ${formatArticleDate(a.date)}</span><br>
-    <a href="${a.url}" style="font-size:13px;color:#1e40af;">${a.title}</a>
+            html += `  <div style="padding:8px 0;border-bottom:1px solid #e8f4f5;">
+    <span style="font-size:11px;color:#64748b;"><strong style="color:${BLUE_SPRUCE};">${a.outlet}</strong> &middot; ${formatArticleDate(a.date)}</span><br>
+    <a href="/feed/${a.id}" style="font-size:13px;color:${TURQUOISE};text-decoration:none;">${a.title}</a><br>
+    <span style="font-size:11px;color:#64748b;">${a.summary}</span>
   </div>\n`;
           }
         } else {
-          html += `  <p style="font-size:13px;color:#64748b;font-style:italic;">No relevant news to report.</p>\n`;
+          html += `  <p style="font-size:13px;color:#94a3b8;font-style:italic;">No relevant news to report.</p>\n`;
         }
       }
       html += `</div>\n`;
     }
 
-    html += `<p style="font-size:11px;color:#94a3b8;margin-top:32px;border-top:1px solid #e2e8f0;padding-top:16px;">Acadia Pharmaceuticals &mdash; Internal use only. Generated ${displayDate}.</p>
+    html += `</div>
+<div style="border-top:1px solid #e2e8f0;padding:16px 32px;background:#f8fafc;">
+  <p style="font-size:11px;color:#94a3b8;text-align:center;margin:0;">Acadia Pharmaceuticals &mdash; Internal Use Only &mdash; Not for Distribution</p>
+</div>
 </body></html>`;
     return html;
   }
 
   function buildMarkdown(): string {
-    let md = `# Acadia Media Monitor — ${displayDate}\n\n`;
-    md += `_Coverage period: April 14–15, 2025 | ${totalArticles} items included_\n\n`;
+    let md = `# ACADIA MEDIA MONITOR — ${displayDate}\n\n`;
+    md += `_Daily Digest | ${totalArticles} items included_\n\n`;
     md += `---\n\n`;
 
     for (const sec of DIGEST_SECTIONS) {
@@ -224,7 +261,9 @@ export default function DigestPage() {
             hasAny = true;
             md += `### ${sub}\n\n`;
             for (const a of items) {
-              md += `**${a.outlet}** · ${formatArticleDate(a.date)}\n[${a.title}](${a.url})\n\n`;
+              md += `**${a.outlet}** · ${formatArticleDate(a.date)}\n`;
+              md += `[${a.title}](/feed/${a.id})\n`;
+              md += `${a.summary}\n\n`;
             }
           }
         }
@@ -233,7 +272,9 @@ export default function DigestPage() {
         const items = secData["__all__"] || [];
         if (items.length > 0) {
           for (const a of items) {
-            md += `**${a.outlet}** · ${formatArticleDate(a.date)}\n[${a.title}](${a.url})\n\n`;
+            md += `**${a.outlet}** · ${formatArticleDate(a.date)}\n`;
+            md += `[${a.title}](/feed/${a.id})\n`;
+            md += `${a.summary}\n\n`;
           }
         } else {
           md += `_No relevant news to report._\n\n`;
@@ -241,7 +282,7 @@ export default function DigestPage() {
       }
       md += `---\n\n`;
     }
-    md += `_Acadia Pharmaceuticals — Internal use only. Generated ${displayDate}._\n`;
+    md += `_Acadia Pharmaceuticals — Internal Use Only. Generated ${displayDate}._\n`;
     return md;
   }
 
@@ -262,7 +303,11 @@ export default function DigestPage() {
       {/* Controls bar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-slate-700" htmlFor="digest-date">
+          <label
+            className="text-sm font-medium"
+            htmlFor="digest-date"
+            style={{ color: BLUE_SPRUCE }}
+          >
             Digest date:
           </label>
           <input
@@ -270,7 +315,12 @@ export default function DigestPage() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="h-9 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            className="h-9 rounded-md border px-3 py-1.5 text-sm focus:outline-none focus:ring-2"
+            style={{
+              borderColor: "#b2d8db",
+              color: "#1e293b",
+              backgroundColor: "#ffffff",
+            }}
           />
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -278,57 +328,115 @@ export default function DigestPage() {
             variant="outline"
             size="sm"
             onClick={handleCopyMd}
+            style={{
+              borderColor: TURQUOISE,
+              color: TURQUOISE,
+            }}
           >
             {copyStatus === "copied-md" ? "Copied!" : "Copy Markdown"}
           </Button>
           <Button
             size="sm"
             onClick={handleCopyHtml}
+            style={{
+              backgroundColor: BLUE_SPRUCE,
+              color: "#ffffff",
+              border: "none",
+            }}
           >
             {copyStatus === "copied-html" ? "Copied!" : "Copy HTML"}
           </Button>
         </div>
       </div>
 
-      {/* Newsletter Card */}
-      <Card className="overflow-hidden">
+      {/* Newsletter card */}
+      <Card className="overflow-hidden shadow-sm" style={{ border: "1px solid #cce8ea" }}>
         <CardContent className="p-0">
-          {/* Newsletter header */}
-          <div className="bg-[#1e40af] px-8 py-6 text-white">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-blue-200 text-xs font-medium uppercase tracking-widest mb-1">
-                  Internal Communications
-                </p>
-                <h1 className="text-2xl font-bold text-white leading-tight">
-                  Acadia Media Monitor
-                </h1>
-              </div>
-              <div className="text-right">
-                <p className="text-blue-100 text-sm font-semibold">{displayDate}</p>
-                <p className="text-blue-200 text-xs mt-0.5">Daily Digest</p>
-              </div>
+
+          {/* Branded header */}
+          <div style={{ backgroundColor: BLUE_SPRUCE }} className="px-8 py-6">
+            <p
+              className="text-xs font-bold uppercase tracking-widest mb-1"
+              style={{ color: GLACIER, letterSpacing: "0.12em" }}
+            >
+              Internal Communications
+            </p>
+            <h1
+              className="text-2xl font-extrabold uppercase tracking-wide text-white leading-tight"
+              style={{ letterSpacing: "0.04em" }}
+            >
+              ACADIA MEDIA MONITOR
+            </h1>
+            {/* Tangerine accent line */}
+            <div
+              style={{
+                height: "2px",
+                backgroundColor: TANGERINE,
+                marginTop: "10px",
+                marginBottom: "12px",
+              }}
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold" style={{ color: GLACIER }}>
+                {displayDate}
+              </p>
+              <p className="text-xs" style={{ color: GLACIER, opacity: 0.8 }}>
+                Daily Digest &nbsp;&middot;&nbsp; {totalArticles} items
+              </p>
             </div>
           </div>
 
-          <div className="px-8 py-6 bg-slate-50 border-b border-slate-200">
-            <p className="text-xs text-slate-500">
-              Coverage period:{" "}
-              <span className="font-medium text-slate-700">April 14–15, 2025</span>
-              {" · "}
-              <span className="font-medium text-slate-700">{totalArticles} items</span> included in today&apos;s digest
-              {" · "}
-              Status: <span className="font-medium text-green-700">Published</span>
-            </p>
+          {/* Overview box */}
+          <div
+            className="px-8 py-5 border-b"
+            style={{ backgroundColor: "#f0f9fa", borderColor: "#cce8ea" }}
+          >
+            <h2
+              className="text-xs font-bold uppercase tracking-widest mb-3"
+              style={{ color: BLUE_SPRUCE }}
+            >
+              Overview
+            </h2>
+            <div
+              className="pl-4 py-1 text-sm leading-relaxed"
+              style={{
+                borderLeft: `3px solid ${TURQUOISE}`,
+                color: "#334155",
+              }}
+            >
+              Today&apos;s digest covers{" "}
+              <strong style={{ color: BLUE_SPRUCE }}>{totalArticles} articles</strong>{" "}
+              across all monitored therapeutic areas and corporate news topics.
+              Rett Syndrome therapeutic coverage includes{" "}
+              {(articlesBySection["Rett Syndrome"]?.["Therapeutic"] ?? []).length} item(s).
+              Parkinson&apos;s Disease coverage spans{" "}
+              {
+                Object.values(articlesBySection["Parkinson's Disease"] ?? {})
+                  .flat().length
+              }{" "}
+              item(s) across therapeutic and competitor subsections.
+              Alzheimer&apos;s Disease features{" "}
+              {(articlesBySection["Alzheimer's Disease"]?.["Therapeutic"] ?? []).length} item(s)
+              on diagnostic testing and therapeutic developments.
+              The News of Interest section includes{" "}
+              {(articlesBySection["News of Interest"]?.["__all__"] ?? []).length} items
+              covering broader healthcare and industry news.
+            </div>
 
             {/* Jump links */}
-            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide mr-1">Jump to:</span>
+            <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1 items-center">
+              <span
+                className="text-xs font-bold uppercase tracking-wide mr-1"
+                style={{ color: "#94a3b8" }}
+              >
+                Jump to:
+              </span>
               {DIGEST_SECTIONS.map((sec) => (
                 <a
                   key={sec.slug}
                   href={`#${sec.slug}`}
-                  className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                  className="text-xs hover:underline"
+                  style={{ color: TURQUOISE }}
                 >
                   {sec.name}
                 </a>
@@ -336,80 +444,89 @@ export default function DigestPage() {
             </div>
           </div>
 
-          {/* Overview paragraph */}
-          <div className="px-8 py-5 border-b border-slate-200 bg-white">
-            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Overview</h2>
-            <p className="text-sm text-slate-700 leading-relaxed">
-              Today&apos;s digest covers {totalArticles} articles from the April 14–15, 2025 monitoring period.
-              Rett Syndrome therapeutic coverage remains active with {
-                (articlesBySection["Rett Syndrome"]?.["Therapeutic"] ?? []).length
-              } items, including new research on MECP2 mutations and personalized treatment pathways.
-              Parkinson&apos;s Disease coverage includes {
-                Object.values(articlesBySection["Parkinson's Disease"] ?? {})
-                  .flat().length
-              } items across therapeutic and competitor subsections.
-              Alzheimer&apos;s Disease features {
-                (articlesBySection["Alzheimer's Disease"]?.["Therapeutic"] ?? []).length
-              } item(s) on diagnostic testing attitudes.
-              The News of Interest section includes {
-                (articlesBySection["News of Interest"]?.["__all__"] ?? []).length
-              } items covering broader healthcare and industry developments.
-            </p>
-          </div>
-
           {/* Sections */}
-          <div className="divide-y divide-slate-200 bg-white">
-            {DIGEST_SECTIONS.map((sec, secIdx) => {
+          <div className="bg-white divide-y" style={{ "--tw-divide-opacity": "1", borderColor: "#e8f4f5" } as React.CSSProperties}>
+            {DIGEST_SECTIONS.map((sec) => {
               const secData = articlesBySection[sec.sectionKey];
               const hasSubsections = sec.subsections !== null;
 
               return (
-                <div key={sec.slug} id={sec.slug} className="px-8 py-6">
-                  {/* Section header */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="text-xs font-bold text-blue-700 bg-blue-50 rounded-full w-6 h-6 flex items-center justify-center shrink-0">
-                      {secIdx + 1}
-                    </span>
-                    <h2 className="text-base font-bold text-slate-900 tracking-tight">
+                <div
+                  key={sec.slug}
+                  id={sec.slug}
+                  className="px-8 py-6"
+                  style={{ borderBottomColor: "#e8f4f5" }}
+                >
+                  {/* Section heading with Turquoise underline */}
+                  <div className="mb-4">
+                    <h2
+                      className="text-base font-bold pb-2"
+                      style={{
+                        color: BLUE_SPRUCE,
+                        borderBottom: `2px solid ${TURQUOISE}`,
+                        display: "inline-block",
+                        paddingRight: "48px",
+                      }}
+                    >
                       {sec.name}
                     </h2>
                   </div>
 
                   {hasSubsections && sec.subsections ? (
-                    <div className="space-y-4 ml-9">
+                    <div className="space-y-5">
                       {(() => {
-                        let totalSubItems = 0;
-                        sec.subsections!.forEach(sub => {
-                          totalSubItems += (secData[sub] ?? []).length;
-                        });
+                        const totalSubItems = sec.subsections!.reduce(
+                          (n, sub) => n + (secData[sub] ?? []).length,
+                          0
+                        );
                         if (totalSubItems === 0) {
                           return (
-                            <p className="text-sm text-slate-500 italic">No relevant news to report.</p>
+                            <p
+                              className="text-sm italic"
+                              style={{ color: "#94a3b8" }}
+                            >
+                              No relevant news to report.
+                            </p>
                           );
                         }
                         return sec.subsections!.map((sub) => {
                           const items = secData[sub] ?? [];
                           return (
                             <div key={sub}>
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                  {sub}
-                                </h3>
-                                <span className="text-xs text-slate-400">
+                              {/* Subsection heading: small Turquoise uppercase */}
+                              <h3
+                                className="text-xs font-bold uppercase tracking-widest mb-2"
+                                style={{ color: TURQUOISE }}
+                              >
+                                {sub}
+                                <span
+                                  className="ml-2 font-normal normal-case tracking-normal"
+                                  style={{ color: "#94a3b8" }}
+                                >
                                   ({items.length})
                                 </span>
-                              </div>
+                              </h3>
                               {items.length === 0 ? (
-                                <p className="text-sm text-slate-400 italic pl-1">No items.</p>
+                                <p
+                                  className="text-xs italic pl-1"
+                                  style={{ color: "#cbd5e1" }}
+                                >
+                                  No items.
+                                </p>
                               ) : (
-                                <div className="border border-slate-100 rounded-md overflow-hidden">
+                                <div
+                                  className="rounded-md overflow-hidden border"
+                                  style={{ borderColor: "#d1eef0" }}
+                                >
                                   {items.map((article) => (
                                     <ArticleItem
                                       key={article.id}
+                                      id={article.id}
                                       title={article.title}
                                       outlet={article.outlet}
                                       date={article.date}
-                                      url={article.url}
+                                      summary={article.summary}
+                                      isDemoUrl={article.isDemoUrl}
                                     />
                                   ))}
                                 </div>
@@ -420,18 +537,28 @@ export default function DigestPage() {
                       })()}
                     </div>
                   ) : (
-                    <div className="ml-9">
+                    <div>
                       {(secData["__all__"] ?? []).length === 0 ? (
-                        <p className="text-sm text-slate-500 italic">No relevant news to report.</p>
+                        <p
+                          className="text-sm italic"
+                          style={{ color: "#94a3b8" }}
+                        >
+                          No relevant news to report.
+                        </p>
                       ) : (
-                        <div className="border border-slate-100 rounded-md overflow-hidden">
+                        <div
+                          className="rounded-md overflow-hidden border"
+                          style={{ borderColor: "#d1eef0" }}
+                        >
                           {(secData["__all__"] ?? []).map((article) => (
                             <ArticleItem
                               key={article.id}
+                              id={article.id}
                               title={article.title}
                               outlet={article.outlet}
                               date={article.date}
-                              url={article.url}
+                              summary={article.summary}
+                              isDemoUrl={article.isDemoUrl}
                             />
                           ))}
                         </div>
@@ -443,12 +570,16 @@ export default function DigestPage() {
             })}
           </div>
 
-          {/* Newsletter footer */}
-          <div className="px-8 py-4 bg-slate-50 border-t border-slate-200">
-            <p className="text-xs text-slate-400 text-center">
-              Acadia Pharmaceuticals &mdash; Internal use only &mdash; Not for distribution
+          {/* Footer */}
+          <div
+            className="px-8 py-4 border-t"
+            style={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }}
+          >
+            <p className="text-xs text-center" style={{ color: "#94a3b8" }}>
+              Acadia Pharmaceuticals &mdash; Internal Use Only &mdash; Not for Distribution
             </p>
           </div>
+
         </CardContent>
       </Card>
     </div>
