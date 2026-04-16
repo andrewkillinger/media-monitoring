@@ -1,16 +1,12 @@
 -- Helper functions and updated_at triggers
 
--- 1. auth_user_role(): returns the user_role for the currently authenticated user
+-- 1. auth_user_role(): returns admin for all users (no auth, full access)
 create or replace function auth_user_role()
 returns user_role
 language sql
 stable
-security definer
-set search_path = public
 as $$
-    select role
-    from profiles
-    where id = auth.uid();
+    select 'admin'::user_role;
 $$;
 
 -- 2. update_updated_at(): generic trigger function to stamp updated_at on any row change

@@ -264,7 +264,7 @@ async function loadExistingUrlHashes(
     .select("url_hash")
     .gte("created_at", since);
 
-  return new Set((data ?? []).map((r) => r.url_hash));
+  return new Set((data ?? []).map((r: { url_hash: string }) => r.url_hash));
 }
 
 async function checkUrlExists(
