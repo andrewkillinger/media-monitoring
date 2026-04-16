@@ -1,15 +1,37 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectItem } from "@/components/ui/select";
 import { demoFlags } from "@/lib/demo-data";
 
-type FlagStatus = "active" | "reviewing" | "resolved" | "all";
-type FlagSeverity = "all" | "critical" | "high" | "medium" | "low";
+type Severity = "critical" | "high" | "medium" | "low";
+type FlagTabStatus = "active" | "reviewing" | "resolved" | "all";
+type FilterSeverity = "all" | Severity;
+
+// Local flag type that allows mutable status
+interface FlagItem {
+  id: string;
+  articleId: string;
+  title: string;
+  headline: string;
+  outlet: string;
+  type: string;
+  severity: Severity;
+  status: string;
+  date: string;
+  holdFromNewsletter: boolean;
+  notes: string;
+}
+
+// Initialize from demo data, casting severity to our local type
+const initialFlags: FlagItem[] = demoFlags.map((f) => ({
+  ...f,
+  severity: f.severity as Severity,
+}));
 
 function severityBadgeClass(severity: string): string {
   switch (severity) {
@@ -23,6 +45,19 @@ function severityBadgeClass(severity: string): string {
       return "bg-blue-100 text-blue-800 border-blue-200";
     default:
       return "bg-slate-100 text-slate-700 border-slate-200";
+  }
+}
+
+function severityStripeClass(severity: string): string {
+  switch (severity) {
+    case "critical":
+      return "bg-red-500";
+    case "high":
+      return "bg-orange-400";
+    case "medium":
+      return "bg-yellow-400";
+    default:
+      return "bg-blue-400";
   }
 }
 
@@ -53,30 +88,24 @@ function flagTypeLabel(type: string): string {
 }
 
 interface FlagCardProps {
-  flag: (typeof demoFlags)[number];
+  flag: FlagItem;
   onMarkReviewing: (id: string) => void;
   onResolve: (id: string) => void;
 }
 
 function FlagCard({ flag, onMarkReviewing, onResolve }: FlagCardProps) {
+  const isReviewing = flag.status === "reviewing";
+  const isResolved = flag.status === "resolved";
+  const isSent = flag.status === "sent";
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
-        <div className="flex items-start gap-0">
+        <div className="flex items-start">
           {/* Severity stripe */}
-          <div
-            className={`w-1.5 self-stretch shrink-0 ${
-              flag.severity === "critical"
-                ? "bg-red-500"
-                : flag.severity === "high"
-                ? "bg-orange-400"
-                : flag.severity === "medium"
-                ? "bg-yellow-400"
-                : "bg-blue-400"
-            }`}
-          />
+          <div className={`w-1.5 self-stretch shrink-0 ${severityStripeClass(flag.severity)}`} />
           <div className="flex-1 p-4">
-            {/* Top row: badges */}
+            {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <Badge
                 className={`text-xs border ${severityBadgeClass(flag.severity)}`}
@@ -107,27 +136,27 @@ function FlagCard({ flag, onMarkReviewing, onResolve }: FlagCardProps) {
             </div>
 
             {/* Headline */}
-            <p className="text-sm font-semibold text-slate-900 leading-snug mb-1">
+            <p className="text-sm font-semibold text-[var(--foreground)] leading-snug mb-1">
               {flag.headline}
             </p>
 
             {/* Outlet + date */}
-            <p className="text-xs text-slate-500 mb-2">
-              <span className="font-medium text-slate-700">{flag.outlet}</span>
+            <p className="text-xs text-[var(--muted-foreground)] mb-2">
+              <span className="font-medium text-[var(--foreground)]">{flag.outlet}</span>
               {" · "}
               {flag.date}
             </p>
 
             {/* Notes */}
             {flag.notes && (
-              <p className="text-xs text-slate-600 bg-slate-50 rounded p-2 border border-slate-100 mb-3">
+              <p className="text-xs text-[var(--muted-foreground)] bg-[var(--muted)] rounded p-2 border border-[var(--border)] mb-3">
                 {flag.notes}
               </p>
             )}
 
             {/* Actions */}
             <div className="flex items-center gap-2">
-              {flag.status !== "reviewing" && flag.status !== "resolved" && (
+              {!isReviewing && !isResolved && !isSent && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -137,7 +166,7 @@ function FlagCard({ flag, onMarkReviewing, onResolve }: FlagCardProps) {
                   Mark Reviewing
                 </Button>
               )}
-              {flag.status !== "resolved" && (
+              {!isResolved && !isSent && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -147,8 +176,10 @@ function FlagCard({ flag, onMarkReviewing, onResolve }: FlagCardProps) {
                   Resolve
                 </Button>
               )}
-              {flag.status === "resolved" && (
-                <span className="text-xs text-slate-400 italic">Resolved</span>
+              {(isResolved || isSent) && (
+                <span className="text-xs text-[var(--muted-foreground)] italic">
+                  {isSent ? "Sent" : "Resolved"}
+                </span>
               )}
             </div>
           </div>
@@ -159,29 +190,34 @@ function FlagCard({ flag, onMarkReviewing, onResolve }: FlagCardProps) {
 }
 
 export default function AlertsPage() {
-  const [flags, setFlags] = useState(demoFlags);
-  const [severityFilter, setSeverityFilter] = useState<FlagSeverity>("all");
+  const [flags, setFlags] = useState<FlagItem[]>(initialFlags);
+  const [severityFilter, setSeverityFilter] = useState<FilterSeverity>("all");
 
   function handleMarkReviewing(id: string) {
     setFlags((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status: "reviewing" as const } : f))
+      prev.map((f) => (f.id === id ? { ...f, status: "reviewing" } : f))
     );
   }
 
   function handleResolve(id: string) {
     setFlags((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status: "resolved" as const } : f))
+      prev.map((f) => (f.id === id ? { ...f, status: "resolved" } : f))
     );
   }
 
-  function filterFlags(tabStatus: FlagStatus) {
+  function filterFlags(tabStatus: FlagTabStatus): FlagItem[] {
     return flags.filter((f) => {
-      const matchesTab =
-        tabStatus === "all" ||
-        (tabStatus === "active" && f.status !== "reviewing" && f.status !== "resolved" && f.status !== "sent") ||
-        (tabStatus === "reviewing" && f.status === "reviewing") ||
-        (tabStatus === "resolved" && (f.status === "resolved" || f.status === "sent")) ||
-        tabStatus === "all";
+      let matchesTab: boolean;
+      if (tabStatus === "all") {
+        matchesTab = true;
+      } else if (tabStatus === "active") {
+        matchesTab = f.status !== "reviewing" && f.status !== "resolved" && f.status !== "sent";
+      } else if (tabStatus === "reviewing") {
+        matchesTab = f.status === "reviewing";
+      } else {
+        // resolved tab
+        matchesTab = f.status === "resolved" || f.status === "sent";
+      }
       const matchesSeverity =
         severityFilter === "all" || f.severity === severityFilter;
       return matchesTab && matchesSeverity;
@@ -195,6 +231,13 @@ export default function AlertsPage() {
   const resolvedCount = flags.filter(
     (f) => f.status === "resolved" || f.status === "sent"
   ).length;
+
+  const tabs: { value: FlagTabStatus; label: string; count?: number }[] = [
+    { value: "active", label: "Active", count: activeCount },
+    { value: "reviewing", label: "Reviewing", count: reviewingCount },
+    { value: "resolved", label: "Resolved", count: resolvedCount },
+    { value: "all", label: "All", count: flags.length },
+  ];
 
   return (
     <div className="space-y-4">
@@ -212,7 +255,7 @@ export default function AlertsPage() {
           </label>
           <Select
             value={severityFilter}
-            onChange={(e) => setSeverityFilter(e.target.value as FlagSeverity)}
+            onChange={(e) => setSeverityFilter(e.target.value as FilterSeverity)}
             className="h-8 w-36 text-xs"
           >
             <SelectItem value="all">All Severities</SelectItem>
@@ -244,25 +287,37 @@ export default function AlertsPage() {
       {/* Tabs */}
       <Tabs defaultValue="all">
         <TabsList>
-          <TabsTrigger value="active">
-            Active{activeCount > 0 && <span className="ml-1.5 rounded-full bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center">{activeCount}</span>}
-          </TabsTrigger>
-          <TabsTrigger value="reviewing">
-            Reviewing{reviewingCount > 0 && <span className="ml-1.5 rounded-full bg-amber-500 text-white text-[10px] w-4 h-4 flex items-center justify-center">{reviewingCount}</span>}
-          </TabsTrigger>
-          <TabsTrigger value="resolved">Resolved</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              <span className="flex items-center gap-1.5">
+                {tab.label}
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span
+                    className={`rounded-full text-white text-[10px] min-w-[16px] h-4 px-1 flex items-center justify-center ${
+                      tab.value === "active"
+                        ? "bg-red-500"
+                        : tab.value === "reviewing"
+                        ? "bg-amber-500"
+                        : "bg-[var(--muted-foreground)]"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </span>
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        {(["active", "reviewing", "resolved", "all"] as FlagStatus[]).map((tab) => (
-          <TabsContent key={tab} value={tab}>
+        {tabs.map((tab) => (
+          <TabsContent key={tab.value} value={tab.value}>
             <div className="space-y-3 mt-3">
-              {filterFlags(tab).length === 0 ? (
+              {filterFlags(tab.value).length === 0 ? (
                 <div className="text-center py-12 text-[var(--muted-foreground)] text-sm">
                   No flags in this category.
                 </div>
               ) : (
-                filterFlags(tab).map((flag) => (
+                filterFlags(tab.value).map((flag) => (
                   <FlagCard
                     key={flag.id}
                     flag={flag}
