@@ -91,7 +91,7 @@ const ruleActionSchema = z.object({
   action_type: actionTypeSchema,
   target_id: uuidSchema.optional().nullable(),
   target_value: z.string().max(500).optional().nullable(),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
 });
 
 // ─── Rule schema ──────────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ export const entitySchema = z.object({
   is_primary: z.boolean().default(false),
   is_competitor: z.boolean().default(false),
   parent_entity_id: uuidSchema.optional().nullable(),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
   is_active: z.boolean().default(true),
   aliases: z
     .array(
@@ -162,7 +162,7 @@ export const outletSchema = z.object({
   language: z.string().default("en"),
   is_priority: z.boolean().default(false),
   is_excluded: z.boolean().default(false),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
 });
 
 export type OutletInput = z.infer<typeof outletSchema>;
@@ -243,7 +243,7 @@ export const sourceAdapterSchema = z.object({
     "tveyes",
     "webhook",
   ]),
-  settings: z.record(z.unknown()).default({}),
+  settings: z.record(z.string(), z.unknown()).default({}),
   is_active: z.boolean().default(true),
   fetch_interval_minutes: z.number().int().min(1).max(10080).default(60),
 });

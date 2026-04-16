@@ -10,11 +10,12 @@ import type {
   ConditionResult,
   EvaluationContext,
   EntityMatch,
+  EntityWithAliases,
   OutletInfo,
+  OutletWithTier,
   RuleEvaluationResult,
   RuleWithConditionsAndActions,
 } from "./types";
-import type { EntityWithAliases, OutletWithTier } from "./types";
 import { EntityIndex } from "./matchers/entity.matcher";
 import { evaluateKeywordCondition, isKeywordCondition } from "./matchers/keyword.matcher";
 import { evaluateOutletCondition, isOutletCondition } from "./matchers/outlet.matcher";
@@ -114,9 +115,10 @@ export class RuleEngine {
 
     for (const rule of this.sortedRules) {
       const result = this.evaluateRule(rule, context);
-      appliedRules.push(result);
 
       if (!result.matched) continue;
+
+      appliedRules.push(result);
 
       // Process actions
       for (const action of result.actions) {
@@ -175,7 +177,9 @@ export class RuleEngine {
           case "trigger_alert":
             alerts.push({
               severity:
-                (action.metadata?.severity as string | undefined) ?? "medium",
+                (action.target_value as string | undefined) ??
+                (action.metadata?.severity as string | undefined) ??
+                "medium",
               ruleId: rule.id,
               ruleName: rule.name,
               targetValue: action.target_value ?? null,

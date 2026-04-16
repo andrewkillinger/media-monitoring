@@ -119,8 +119,8 @@ export function extractSnippet(text: string, maxLength: number = 500): string {
   // Fall back to word boundary
   const lastSpace = hard.lastIndexOf(" ");
   return lastSpace > searchFrom
-    ? hard.slice(0, lastSpace).trim() + "…"
-    : hard.trim() + "…";
+    ? hard.slice(0, lastSpace).trim() + "..."
+    : hard.trim() + "...";
 }
 
 // ─── Language detection ───────────────────────────────────────────────────────

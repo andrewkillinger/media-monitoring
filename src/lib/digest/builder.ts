@@ -6,6 +6,7 @@ import type {
   EntityRow,
   SectionRow,
   SubsectionRow,
+  ArticleStatus,
 } from "../supabase/types";
 import type {
   DigestConfig,
@@ -13,12 +14,13 @@ import type {
   DigestSection,
   DigestSubsection,
   DigestItem,
+  SubsectionInput,
 } from "./types";
 import { extractSnippet } from "../pipeline/normalize";
 
 // ─── Default configuration ────────────────────────────────────────────────────
 
-const DEFAULT_INCLUDE_STATUSES = ["classified", "reviewed", "published"];
+const DEFAULT_INCLUDE_STATUSES: ArticleStatus[] = ["classified", "reviewed", "published"];
 const DEFAULT_MAX_ITEMS = 0; // unlimited
 const DEFAULT_INCLUDE_EMPTY = true;
 
@@ -202,7 +204,7 @@ function resolveCoverageWindow(config: DigestConfig): {
     };
   }
 
-  const date = new Date(config.date);
+  const date = config.date instanceof Date ? config.date : new Date(config.date);
   const coverageStart = new Date(date);
   coverageStart.setUTCHours(0, 0, 0, 0);
 
@@ -272,6 +274,7 @@ function buildDigestItems(
 
     items.push({
       article,
+      articleId: article.id,
       headline: article.translated_title ?? article.title,
       snippet: article.body_snippet
         ? extractSnippet(article.body_snippet, 200)
@@ -284,4 +287,182 @@ function buildDigestItems(
   }
 
   return items;
+}
+
+// ─── Synchronous builder from pre-loaded data ─────────────────────────────────
+
+/**
+ * Article input shape expected by buildDigestFromArticles.
+ */
+export interface ArticleInput {
+  id: string;
+  title: string;
+  outlet_name?: string | null;
+  url: string;
+  published_at?: string | null;
+  section_id?: string | null;
+  subsection_id?: string | null;
+  priority_score?: number;
+  body_snippet?: string | null;
+}
+
+/**
+ * Section input shape expected by buildDigestFromArticles.
+ */
+export interface SectionInput {
+  id: string;
+  name: string;
+  slug: string;
+  display_order?: number;
+  is_active?: boolean;
+  description?: string | null;
+  is_default?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/**
+ * Build a DigestData synchronously from pre-loaded article, section, and
+ * subsection data. Useful for testing and client-side rendering without
+ * making database calls.
+ *
+ * @param articles     Array of article records with section/subsection IDs
+ * @param sections     Array of section records
+ * @param subsections  Array of subsection records
+ * @param config       Digest configuration
+ */
+export function buildDigestFromArticles(
+  articles: ArticleInput[],
+  sections: SectionInput[],
+  subsections: SubsectionInput[],
+  config: DigestConfig
+): DigestData {
+  const includeEmpty = config.includeEmptySections ?? DEFAULT_INCLUDE_EMPTY;
+  const maxItems = config.maxItemsPerSection ?? DEFAULT_MAX_ITEMS;
+  const date = config.date;
+
+  // Sort sections by display_order
+  const orderedSections = [...sections].sort(
+    (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+  );
+
+  // Apply optional section ordering from config
+  if (config.sectionOrder && config.sectionOrder.length > 0) {
+    const orderMap = new Map(config.sectionOrder.map((id: string, i: number) => [id, i]));
+    orderedSections.sort((a, b) => {
+      const ia = orderMap.get(a.id) ?? 999;
+      const ib = orderMap.get(b.id) ?? 999;
+      return ia !== ib ? ia - ib : (a.display_order ?? 0) - (b.display_order ?? 0);
+    });
+  }
+
+  // Group articles by section and subsection
+  const articlesBySection = new Map<string, Map<string | null, ArticleInput[]>>();
+  for (const article of articles) {
+    const sectionId = article.section_id;
+    if (!sectionId) continue;
+
+    if (!articlesBySection.has(sectionId)) {
+      articlesBySection.set(sectionId, new Map());
+    }
+    const subMap = articlesBySection.get(sectionId)!;
+    const key = article.subsection_id ?? null;
+    const arr = subMap.get(key) ?? [];
+    arr.push(article);
+    subMap.set(key, arr);
+  }
+
+  // Group subsections by section
+  const subsectionsBySection = new Map<string, SubsectionInput[]>();
+  for (const sub of subsections) {
+    const arr = subsectionsBySection.get(sub.section_id) ?? [];
+    arr.push(sub);
+    subsectionsBySection.set(sub.section_id, arr);
+  }
+
+  const digestSections: DigestSection[] = [];
+  let totalItems = 0;
+
+  for (const section of orderedSections) {
+    const sectionArticleMap = articlesBySection.get(section.id) ?? new Map();
+
+    // Build subsections
+    const sectionSubsections = (subsectionsBySection.get(section.id) ?? [])
+      .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+
+    const digestSubsections: DigestSubsection[] = [];
+
+    for (const sub of sectionSubsections) {
+      const subArticles = (sectionArticleMap.get(sub.id) ?? ([] as ArticleInput[]))
+        .sort((a: ArticleInput, b: ArticleInput) => (b.priority_score ?? 0) - (a.priority_score ?? 0));
+
+      const limited = maxItems > 0 ? subArticles.slice(0, maxItems) : subArticles;
+      const subItems: DigestItem[] = limited.map((a: ArticleInput) => ({
+        articleId: a.id,
+        headline: a.title,
+        snippet: a.body_snippet ? extractSnippet(a.body_snippet, 200) : null,
+        outletName: a.outlet_name ?? "Unknown",
+        publishedAt: a.published_at ?? null,
+        url: a.url,
+        entityMentions: [],
+      }));
+
+      if (subItems.length > 0) {
+        totalItems += subItems.length;
+        digestSubsections.push({
+          subsection: sub as SubsectionRow,
+          items: subItems,
+        });
+      } else if (includeEmpty) {
+        digestSubsections.push({
+          subsection: sub as SubsectionRow,
+          items: [],
+        });
+      }
+    }
+
+    // Direct articles in this section (no subsection)
+    const directArticles = (sectionArticleMap.get(null) ?? ([] as ArticleInput[]))
+      .sort((a: ArticleInput, b: ArticleInput) => (b.priority_score ?? 0) - (a.priority_score ?? 0));
+    const limitedDirect = maxItems > 0 ? directArticles.slice(0, maxItems) : directArticles;
+    const directItems: DigestItem[] = limitedDirect.map((a: ArticleInput) => ({
+      articleId: a.id,
+      headline: a.title,
+      snippet: a.body_snippet ? extractSnippet(a.body_snippet, 200) : null,
+      outletName: a.outlet_name ?? "Unknown",
+      publishedAt: a.published_at ?? null,
+      url: a.url,
+      entityMentions: [],
+    }));
+    totalItems += directItems.length;
+
+    const hasItems =
+      directItems.length > 0 ||
+      digestSubsections.some((sub) => sub.items.length > 0);
+
+    if (hasItems || includeEmpty) {
+      digestSections.push({
+        section: section as SectionRow,
+        items: directItems,
+        subsections: digestSubsections,
+        hasItems,
+      });
+    }
+  }
+
+  // Determine coverage window from config or date
+  const refDate = date instanceof Date ? date : new Date(date);
+  const coverageStart = new Date(refDate);
+  coverageStart.setUTCHours(0, 0, 0, 0);
+  const coverageEnd = new Date(refDate);
+  coverageEnd.setUTCHours(23, 59, 59, 999);
+
+  return {
+    date,
+    overview: null,
+    sections: digestSections,
+    coverageStart: coverageStart.toISOString(),
+    coverageEnd: coverageEnd.toISOString(),
+    totalItems,
+  };
 }

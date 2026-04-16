@@ -34,7 +34,7 @@ export class EntityIndex {
 
   constructor(entities: EntityWithAliases[]) {
     for (const entity of entities) {
-      if (!entity.is_active) continue;
+      if (entity.is_active === false) continue;
 
       const allAliases = new Set<string>();
 
@@ -114,7 +114,7 @@ export class EntityIndex {
           matchLocation: location,
           isCompetitor: entry.entity.is_competitor,
           products: entry.entity.products ?? [],
-          diseaseStates: entry.entity.diseaseStates ?? [],
+          diseaseStates: entry.entity.diseaseStates ?? entry.entity.disease_states ?? [],
         });
       } else {
         // Upgrade match location if we find it in more places

@@ -17,8 +17,7 @@ import type {
 } from "../supabase/types";
 import { RuleEngine } from "../rules/engine";
 import type { ArticleForEvaluation, ClassificationResult } from "../rules/types";
-import type { RuleWithConditionsAndActions } from "../rules/types";
-import type { EntityWithAliases } from "../rules/matchers/entity.matcher";
+import type { RuleWithConditionsAndActions, EntityWithAliases } from "../rules/types";
 import type { OutletInfoInput } from "../rules/engine";
 import { normalizeTitle } from "./normalize";
 

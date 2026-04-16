@@ -29,9 +29,9 @@ export class FileUploadAdapter implements SourceAdapter {
   async fetch(config: AdapterConfig, _cursor?: string): Promise<FetchResult> {
     const startedAt = Date.now();
 
-    const errs = this.validate(config);
-    if (errs.length > 0) {
-      throw new AdapterError(errs.join("; "), this.type);
+    const validation = this.validate(config);
+    if (!validation.valid && validation.errors && validation.errors.length > 0) {
+      throw new AdapterError(validation.errors.join("; "), this.type);
     }
 
     const storagePath = config.settings.storagePath as string;

@@ -147,7 +147,7 @@ export type ScheduleType =
 
 // ─── Table row types ──────────────────────────────────────────────────────────
 
-export interface ProfileRow {
+export type ProfileRow = {
   id: string;
   email: string;
   full_name: string | null;
@@ -157,7 +157,7 @@ export interface ProfileRow {
   updated_at: string;
 }
 
-export interface ProfileInsert {
+export type ProfileInsert = {
   id: string;
   email: string;
   full_name?: string | null;
@@ -167,7 +167,7 @@ export interface ProfileInsert {
   updated_at?: string;
 }
 
-export interface ProfileUpdate {
+export type ProfileUpdate = {
   id?: string;
   email?: string;
   full_name?: string | null;
@@ -177,7 +177,7 @@ export interface ProfileUpdate {
   updated_at?: string;
 }
 
-export interface DiseaseStateRow {
+export type DiseaseStateRow = {
   id: string;
   name: string;
   slug: string;
@@ -188,7 +188,7 @@ export interface DiseaseStateRow {
   updated_at: string;
 }
 
-export interface DiseaseStateInsert {
+export type DiseaseStateInsert = {
   id?: string;
   name: string;
   slug: string;
@@ -199,7 +199,7 @@ export interface DiseaseStateInsert {
   updated_at?: string;
 }
 
-export interface DiseaseStateUpdate {
+export type DiseaseStateUpdate = {
   id?: string;
   name?: string;
   slug?: string;
@@ -210,7 +210,7 @@ export interface DiseaseStateUpdate {
   updated_at?: string;
 }
 
-export interface EntityRow {
+export type EntityRow = {
   id: string;
   name: string;
   slug: string;
@@ -224,7 +224,7 @@ export interface EntityRow {
   updated_at: string;
 }
 
-export interface EntityInsert {
+export type EntityInsert = {
   id?: string;
   name: string;
   slug: string;
@@ -238,7 +238,7 @@ export interface EntityInsert {
   updated_at?: string;
 }
 
-export interface EntityUpdate {
+export type EntityUpdate = {
   id?: string;
   name?: string;
   slug?: string;
@@ -252,7 +252,7 @@ export interface EntityUpdate {
   updated_at?: string;
 }
 
-export interface EntityAliasRow {
+export type EntityAliasRow = {
   id: string;
   entity_id: string;
   alias_text: string;
@@ -260,7 +260,7 @@ export interface EntityAliasRow {
   created_at: string;
 }
 
-export interface EntityAliasInsert {
+export type EntityAliasInsert = {
   id?: string;
   entity_id: string;
   alias_text: string;
@@ -268,7 +268,7 @@ export interface EntityAliasInsert {
   created_at?: string;
 }
 
-export interface EntityAliasUpdate {
+export type EntityAliasUpdate = {
   id?: string;
   entity_id?: string;
   alias_text?: string;
@@ -276,37 +276,37 @@ export interface EntityAliasUpdate {
   created_at?: string;
 }
 
-export interface EntityDiseaseStateRow {
+export type EntityDiseaseStateRow = {
   entity_id: string;
   disease_state_id: string;
   relationship_type: RelationshipType | null;
 }
 
-export interface EntityDiseaseStateInsert {
+export type EntityDiseaseStateInsert = {
   entity_id: string;
   disease_state_id: string;
   relationship_type?: RelationshipType | null;
 }
 
-export interface EntityDiseaseStateUpdate {
+export type EntityDiseaseStateUpdate = {
   entity_id?: string;
   disease_state_id?: string;
   relationship_type?: RelationshipType | null;
 }
 
-export interface SectionRow {
+export type SectionRow = {
   id: string;
   name: string;
   slug: string;
-  description: string | null;
+  description?: string | null;
   display_order: number;
   is_active: boolean;
-  is_default: boolean;
-  created_at: string;
-  updated_at: string;
+  is_default?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface SectionInsert {
+export type SectionInsert = {
   id?: string;
   name: string;
   slug: string;
@@ -318,7 +318,7 @@ export interface SectionInsert {
   updated_at?: string;
 }
 
-export interface SectionUpdate {
+export type SectionUpdate = {
   id?: string;
   name?: string;
   slug?: string;
@@ -330,18 +330,18 @@ export interface SectionUpdate {
   updated_at?: string;
 }
 
-export interface SubsectionRow {
+export type SubsectionRow = {
   id: string;
   section_id: string;
   name: string;
   slug: string;
   display_order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface SubsectionInsert {
+export type SubsectionInsert = {
   id?: string;
   section_id: string;
   name: string;
@@ -352,7 +352,7 @@ export interface SubsectionInsert {
   updated_at?: string;
 }
 
-export interface SubsectionUpdate {
+export type SubsectionUpdate = {
   id?: string;
   section_id?: string;
   name?: string;
@@ -363,7 +363,7 @@ export interface SubsectionUpdate {
   updated_at?: string;
 }
 
-export interface OutletRow {
+export type OutletRow = {
   id: string;
   name: string;
   slug: string;
@@ -380,7 +380,7 @@ export interface OutletRow {
   updated_at: string;
 }
 
-export interface OutletInsert {
+export type OutletInsert = {
   id?: string;
   name: string;
   slug: string;
@@ -397,7 +397,7 @@ export interface OutletInsert {
   updated_at?: string;
 }
 
-export interface OutletUpdate {
+export type OutletUpdate = {
   id?: string;
   name?: string;
   slug?: string;
@@ -414,7 +414,7 @@ export interface OutletUpdate {
   updated_at?: string;
 }
 
-export interface OutletListRow {
+export type OutletListRow = {
   id: string;
   name: string;
   slug: string;
@@ -423,7 +423,7 @@ export interface OutletListRow {
   created_at: string;
 }
 
-export interface OutletListInsert {
+export type OutletListInsert = {
   id?: string;
   name: string;
   slug: string;
@@ -432,7 +432,7 @@ export interface OutletListInsert {
   created_at?: string;
 }
 
-export interface OutletListUpdate {
+export type OutletListUpdate = {
   id?: string;
   name?: string;
   slug?: string;
@@ -441,22 +441,22 @@ export interface OutletListUpdate {
   created_at?: string;
 }
 
-export interface OutletListMemberRow {
+export type OutletListMemberRow = {
   outlet_list_id: string;
   outlet_id: string;
 }
 
-export interface OutletListMemberInsert {
+export type OutletListMemberInsert = {
   outlet_list_id: string;
   outlet_id: string;
 }
 
-export interface OutletListMemberUpdate {
+export type OutletListMemberUpdate = {
   outlet_list_id?: string;
   outlet_id?: string;
 }
 
-export interface SourceAdapterRow {
+export type SourceAdapterRow = {
   id: string;
   name: string;
   adapter_type: SourceType;
@@ -470,7 +470,7 @@ export interface SourceAdapterRow {
   updated_at: string;
 }
 
-export interface SourceAdapterInsert {
+export type SourceAdapterInsert = {
   id?: string;
   name: string;
   adapter_type: SourceType;
@@ -484,7 +484,7 @@ export interface SourceAdapterInsert {
   updated_at?: string;
 }
 
-export interface SourceAdapterUpdate {
+export type SourceAdapterUpdate = {
   id?: string;
   name?: string;
   adapter_type?: SourceType;
@@ -498,7 +498,7 @@ export interface SourceAdapterUpdate {
   updated_at?: string;
 }
 
-export interface IngestionRunRow {
+export type IngestionRunRow = {
   id: string;
   source_adapter_id: string | null;
   started_at: string;
@@ -512,7 +512,7 @@ export interface IngestionRunRow {
   metadata: Record<string, unknown>;
 }
 
-export interface IngestionRunInsert {
+export type IngestionRunInsert = {
   id?: string;
   source_adapter_id?: string | null;
   started_at?: string;
@@ -526,7 +526,7 @@ export interface IngestionRunInsert {
   metadata?: Record<string, unknown>;
 }
 
-export interface IngestionRunUpdate {
+export type IngestionRunUpdate = {
   id?: string;
   source_adapter_id?: string | null;
   started_at?: string;
@@ -540,7 +540,7 @@ export interface IngestionRunUpdate {
   metadata?: Record<string, unknown>;
 }
 
-export interface ArticleRow {
+export type ArticleRow = {
   id: string;
   source_adapter_id: string | null;
   ingestion_run_id: string | null;
@@ -592,7 +592,7 @@ export interface ArticleRow {
   updated_at: string;
 }
 
-export interface ArticleInsert {
+export type ArticleInsert = {
   id?: string;
   source_adapter_id?: string | null;
   ingestion_run_id?: string | null;
@@ -643,7 +643,7 @@ export interface ArticleInsert {
   updated_at?: string;
 }
 
-export interface ArticleUpdate {
+export type ArticleUpdate = {
   id?: string;
   source_adapter_id?: string | null;
   ingestion_run_id?: string | null;
@@ -694,7 +694,7 @@ export interface ArticleUpdate {
   updated_at?: string;
 }
 
-export interface StoryClusterRow {
+export type StoryClusterRow = {
   id: string;
   primary_article_id: string | null;
   title: string | null;
@@ -703,7 +703,7 @@ export interface StoryClusterRow {
   updated_at: string;
 }
 
-export interface StoryClusterInsert {
+export type StoryClusterInsert = {
   id?: string;
   primary_article_id?: string | null;
   title?: string | null;
@@ -712,7 +712,7 @@ export interface StoryClusterInsert {
   updated_at?: string;
 }
 
-export interface StoryClusterUpdate {
+export type StoryClusterUpdate = {
   id?: string;
   primary_article_id?: string | null;
   title?: string | null;
@@ -721,7 +721,7 @@ export interface StoryClusterUpdate {
   updated_at?: string;
 }
 
-export interface ArticleEntityRow {
+export type ArticleEntityRow = {
   id: string;
   article_id: string;
   entity_id: string;
@@ -731,7 +731,7 @@ export interface ArticleEntityRow {
   created_at: string;
 }
 
-export interface ArticleEntityInsert {
+export type ArticleEntityInsert = {
   id?: string;
   article_id: string;
   entity_id: string;
@@ -741,7 +741,7 @@ export interface ArticleEntityInsert {
   created_at?: string;
 }
 
-export interface ArticleEntityUpdate {
+export type ArticleEntityUpdate = {
   id?: string;
   article_id?: string;
   entity_id?: string;
@@ -751,7 +751,7 @@ export interface ArticleEntityUpdate {
   created_at?: string;
 }
 
-export interface ArticleSectionRow {
+export type ArticleSectionRow = {
   id: string;
   article_id: string;
   section_id: string;
@@ -761,7 +761,7 @@ export interface ArticleSectionRow {
   created_at: string;
 }
 
-export interface ArticleSectionInsert {
+export type ArticleSectionInsert = {
   id?: string;
   article_id: string;
   section_id: string;
@@ -771,7 +771,7 @@ export interface ArticleSectionInsert {
   created_at?: string;
 }
 
-export interface ArticleSectionUpdate {
+export type ArticleSectionUpdate = {
   id?: string;
   article_id?: string;
   section_id?: string;
@@ -781,7 +781,7 @@ export interface ArticleSectionUpdate {
   created_at?: string;
 }
 
-export interface RuleRow {
+export type RuleRow = {
   id: string;
   name: string;
   description: string | null;
@@ -794,7 +794,7 @@ export interface RuleRow {
   updated_at: string;
 }
 
-export interface RuleInsert {
+export type RuleInsert = {
   id?: string;
   name: string;
   description?: string | null;
@@ -807,7 +807,7 @@ export interface RuleInsert {
   updated_at?: string;
 }
 
-export interface RuleUpdate {
+export type RuleUpdate = {
   id?: string;
   name?: string;
   description?: string | null;
@@ -820,7 +820,7 @@ export interface RuleUpdate {
   updated_at?: string;
 }
 
-export interface RuleConditionRow {
+export type RuleConditionRow = {
   id: string;
   rule_id: string;
   field: ConditionField;
@@ -832,7 +832,7 @@ export interface RuleConditionRow {
   created_at: string;
 }
 
-export interface RuleConditionInsert {
+export type RuleConditionInsert = {
   id?: string;
   rule_id: string;
   field: ConditionField;
@@ -844,7 +844,7 @@ export interface RuleConditionInsert {
   created_at?: string;
 }
 
-export interface RuleConditionUpdate {
+export type RuleConditionUpdate = {
   id?: string;
   rule_id?: string;
   field?: ConditionField;
@@ -856,7 +856,7 @@ export interface RuleConditionUpdate {
   created_at?: string;
 }
 
-export interface RuleActionRow {
+export type RuleActionRow = {
   id: string;
   rule_id: string;
   action_type: ActionType;
@@ -866,7 +866,7 @@ export interface RuleActionRow {
   created_at: string;
 }
 
-export interface RuleActionInsert {
+export type RuleActionInsert = {
   id?: string;
   rule_id: string;
   action_type: ActionType;
@@ -876,7 +876,7 @@ export interface RuleActionInsert {
   created_at?: string;
 }
 
-export interface RuleActionUpdate {
+export type RuleActionUpdate = {
   id?: string;
   rule_id?: string;
   action_type?: ActionType;
@@ -886,7 +886,7 @@ export interface RuleActionUpdate {
   created_at?: string;
 }
 
-export interface ItemFlagRow {
+export type ItemFlagRow = {
   id: string;
   article_id: string;
   flag_type: FlagType;
@@ -902,7 +902,7 @@ export interface ItemFlagRow {
   updated_at: string;
 }
 
-export interface ItemFlagInsert {
+export type ItemFlagInsert = {
   id?: string;
   article_id: string;
   flag_type: FlagType;
@@ -918,7 +918,7 @@ export interface ItemFlagInsert {
   updated_at?: string;
 }
 
-export interface ItemFlagUpdate {
+export type ItemFlagUpdate = {
   id?: string;
   article_id?: string;
   flag_type?: FlagType;
@@ -934,7 +934,7 @@ export interface ItemFlagUpdate {
   updated_at?: string;
 }
 
-export interface ItemOverrideRow {
+export type ItemOverrideRow = {
   id: string;
   article_id: string;
   override_type: ItemOverrideType | null;
@@ -945,7 +945,7 @@ export interface ItemOverrideRow {
   created_at: string;
 }
 
-export interface ItemOverrideInsert {
+export type ItemOverrideInsert = {
   id?: string;
   article_id: string;
   override_type?: ItemOverrideType | null;
@@ -956,7 +956,7 @@ export interface ItemOverrideInsert {
   created_at?: string;
 }
 
-export interface ItemOverrideUpdate {
+export type ItemOverrideUpdate = {
   id?: string;
   article_id?: string;
   override_type?: ItemOverrideType | null;
@@ -967,7 +967,7 @@ export interface ItemOverrideUpdate {
   created_at?: string;
 }
 
-export interface ScheduleRow {
+export type ScheduleRow = {
   id: string;
   name: string;
   schedule_type: ScheduleType;
@@ -982,7 +982,7 @@ export interface ScheduleRow {
   updated_at: string;
 }
 
-export interface ScheduleInsert {
+export type ScheduleInsert = {
   id?: string;
   name: string;
   schedule_type: ScheduleType;
@@ -997,7 +997,7 @@ export interface ScheduleInsert {
   updated_at?: string;
 }
 
-export interface ScheduleUpdate {
+export type ScheduleUpdate = {
   id?: string;
   name?: string;
   schedule_type?: ScheduleType;
@@ -1012,7 +1012,7 @@ export interface ScheduleUpdate {
   updated_at?: string;
 }
 
-export interface AlertRecipientRow {
+export type AlertRecipientRow = {
   id: string;
   schedule_id: string | null;
   email: string;
@@ -1022,7 +1022,7 @@ export interface AlertRecipientRow {
   created_at: string;
 }
 
-export interface AlertRecipientInsert {
+export type AlertRecipientInsert = {
   id?: string;
   schedule_id?: string | null;
   email: string;
@@ -1032,7 +1032,7 @@ export interface AlertRecipientInsert {
   created_at?: string;
 }
 
-export interface AlertRecipientUpdate {
+export type AlertRecipientUpdate = {
   id?: string;
   schedule_id?: string | null;
   email?: string;
@@ -1042,7 +1042,7 @@ export interface AlertRecipientUpdate {
   created_at?: string;
 }
 
-export interface DigestRunRow {
+export type DigestRunRow = {
   id: string;
   schedule_id: string | null;
   digest_date: string;
@@ -1059,7 +1059,7 @@ export interface DigestRunRow {
   updated_at: string;
 }
 
-export interface DigestRunInsert {
+export type DigestRunInsert = {
   id?: string;
   schedule_id?: string | null;
   digest_date: string;
@@ -1076,7 +1076,7 @@ export interface DigestRunInsert {
   updated_at?: string;
 }
 
-export interface DigestRunUpdate {
+export type DigestRunUpdate = {
   id?: string;
   schedule_id?: string | null;
   digest_date?: string;
@@ -1093,7 +1093,7 @@ export interface DigestRunUpdate {
   updated_at?: string;
 }
 
-export interface DigestItemRow {
+export type DigestItemRow = {
   id: string;
   digest_run_id: string;
   article_id: string;
@@ -1105,7 +1105,7 @@ export interface DigestItemRow {
   created_at: string;
 }
 
-export interface DigestItemInsert {
+export type DigestItemInsert = {
   id?: string;
   digest_run_id: string;
   article_id: string;
@@ -1117,7 +1117,7 @@ export interface DigestItemInsert {
   created_at?: string;
 }
 
-export interface DigestItemUpdate {
+export type DigestItemUpdate = {
   id?: string;
   digest_run_id?: string;
   article_id?: string;
@@ -1129,7 +1129,7 @@ export interface DigestItemUpdate {
   created_at?: string;
 }
 
-export interface AttachmentRow {
+export type AttachmentRow = {
   id: string;
   article_id: string;
   file_name: string;
@@ -1141,7 +1141,7 @@ export interface AttachmentRow {
   created_at: string;
 }
 
-export interface AttachmentInsert {
+export type AttachmentInsert = {
   id?: string;
   article_id: string;
   file_name: string;
@@ -1153,7 +1153,7 @@ export interface AttachmentInsert {
   created_at?: string;
 }
 
-export interface AttachmentUpdate {
+export type AttachmentUpdate = {
   id?: string;
   article_id?: string;
   file_name?: string;
@@ -1165,7 +1165,7 @@ export interface AttachmentUpdate {
   created_at?: string;
 }
 
-export interface AuditLogRow {
+export type AuditLogRow = {
   id: string;
   user_id: string | null;
   action: string;
@@ -1178,7 +1178,7 @@ export interface AuditLogRow {
   created_at: string;
 }
 
-export interface AuditLogInsert {
+export type AuditLogInsert = {
   id?: string;
   user_id?: string | null;
   action: string;
@@ -1191,7 +1191,7 @@ export interface AuditLogInsert {
   created_at?: string;
 }
 
-export interface AuditLogUpdate {
+export type AuditLogUpdate = {
   id?: string;
   user_id?: string | null;
   action?: string;
@@ -1213,140 +1213,180 @@ export interface Database {
         Row: ProfileRow;
         Insert: ProfileInsert;
         Update: ProfileUpdate;
+        Relationships: never[];
       };
       disease_states: {
         Row: DiseaseStateRow;
         Insert: DiseaseStateInsert;
         Update: DiseaseStateUpdate;
+        Relationships: never[];
       };
       entities: {
         Row: EntityRow;
         Insert: EntityInsert;
         Update: EntityUpdate;
+        Relationships: never[];
       };
       entity_aliases: {
         Row: EntityAliasRow;
         Insert: EntityAliasInsert;
         Update: EntityAliasUpdate;
+        Relationships: never[];
       };
       entity_disease_states: {
         Row: EntityDiseaseStateRow;
         Insert: EntityDiseaseStateInsert;
         Update: EntityDiseaseStateUpdate;
+        Relationships: never[];
       };
       sections: {
         Row: SectionRow;
         Insert: SectionInsert;
         Update: SectionUpdate;
+        Relationships: never[];
       };
       subsections: {
         Row: SubsectionRow;
         Insert: SubsectionInsert;
         Update: SubsectionUpdate;
+        Relationships: never[];
       };
       outlets: {
         Row: OutletRow;
         Insert: OutletInsert;
         Update: OutletUpdate;
+        Relationships: never[];
       };
       outlet_lists: {
         Row: OutletListRow;
         Insert: OutletListInsert;
         Update: OutletListUpdate;
+        Relationships: never[];
       };
       outlet_list_members: {
         Row: OutletListMemberRow;
         Insert: OutletListMemberInsert;
         Update: OutletListMemberUpdate;
+        Relationships: never[];
       };
       source_adapters: {
         Row: SourceAdapterRow;
         Insert: SourceAdapterInsert;
         Update: SourceAdapterUpdate;
+        Relationships: never[];
       };
       ingestion_runs: {
         Row: IngestionRunRow;
         Insert: IngestionRunInsert;
         Update: IngestionRunUpdate;
+        Relationships: never[];
       };
       articles: {
         Row: ArticleRow;
         Insert: ArticleInsert;
         Update: ArticleUpdate;
+        Relationships: never[];
       };
       story_clusters: {
         Row: StoryClusterRow;
         Insert: StoryClusterInsert;
         Update: StoryClusterUpdate;
+        Relationships: never[];
       };
       article_entities: {
         Row: ArticleEntityRow;
         Insert: ArticleEntityInsert;
         Update: ArticleEntityUpdate;
+        Relationships: never[];
       };
       article_sections: {
         Row: ArticleSectionRow;
         Insert: ArticleSectionInsert;
         Update: ArticleSectionUpdate;
+        Relationships: never[];
       };
       rules: {
         Row: RuleRow;
         Insert: RuleInsert;
         Update: RuleUpdate;
+        Relationships: never[];
       };
       rule_conditions: {
         Row: RuleConditionRow;
         Insert: RuleConditionInsert;
         Update: RuleConditionUpdate;
+        Relationships: never[];
       };
       rule_actions: {
         Row: RuleActionRow;
         Insert: RuleActionInsert;
         Update: RuleActionUpdate;
+        Relationships: never[];
       };
       item_flags: {
         Row: ItemFlagRow;
         Insert: ItemFlagInsert;
         Update: ItemFlagUpdate;
+        Relationships: never[];
       };
       item_overrides: {
         Row: ItemOverrideRow;
         Insert: ItemOverrideInsert;
         Update: ItemOverrideUpdate;
+        Relationships: never[];
       };
       schedules: {
         Row: ScheduleRow;
         Insert: ScheduleInsert;
         Update: ScheduleUpdate;
+        Relationships: never[];
       };
       alert_recipients: {
         Row: AlertRecipientRow;
         Insert: AlertRecipientInsert;
         Update: AlertRecipientUpdate;
+        Relationships: never[];
       };
       digest_runs: {
         Row: DigestRunRow;
         Insert: DigestRunInsert;
         Update: DigestRunUpdate;
+        Relationships: never[];
       };
       digest_items: {
         Row: DigestItemRow;
         Insert: DigestItemInsert;
         Update: DigestItemUpdate;
+        Relationships: never[];
       };
       attachments: {
         Row: AttachmentRow;
         Insert: AttachmentInsert;
         Update: AttachmentUpdate;
+        Relationships: never[];
       };
       audit_log: {
         Row: AuditLogRow;
         Insert: AuditLogInsert;
         Update: AuditLogUpdate;
+        Relationships: never[];
       };
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Views: Record<string, {
+      Row: Record<string, unknown>;
+      Relationships: {
+        foreignKeyName: string;
+        columns: string[];
+        isOneToOne?: boolean;
+        referencedRelation: string;
+        referencedColumns: string[];
+      }[];
+    }>;
+    Functions: Record<string, {
+      Args: Record<string, unknown> | never;
+      Returns: unknown;
+    }>;
+    CompositeTypes: Record<string, Record<string, unknown>>;
     Enums: {
       user_role: UserRole;
       article_status: ArticleStatus;

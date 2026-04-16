@@ -1,6 +1,16 @@
 import type { DigestData, DigestSection, DigestSubsection, DigestItem } from "./types";
 import { formatArticleDate, formatDigestDate } from "../utils/dates";
 
+function toDateString(date: Date | string | null | undefined): string {
+  if (!date) return "";
+  return typeof date === "string" ? date : date.toISOString();
+}
+
+function toPublishedAtString(publishedAt: Date | string | null | undefined): string {
+  if (!publishedAt) return "";
+  return typeof publishedAt === "string" ? publishedAt : publishedAt.toISOString();
+}
+
 // ─── HTML renderer ────────────────────────────────────────────────────────────
 
 /**
@@ -24,12 +34,13 @@ export function renderDigestHtml(digest: DigestData): string {
     ? `<p style="font-family:Arial,sans-serif;font-size:14px;color:#333333;line-height:1.6;margin:0 0 24px 0;">${escapeHtml(digest.overview)}</p>`
     : "";
 
+  const digestDateStr = toDateString(digest.date);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Acadia Media Digest – ${escapeHtml(formatDigestDate(digest.date))}</title>
+  <title>Acadia Media Monitor – ${escapeHtml(formatDigestDate(digestDateStr))}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;">
@@ -42,10 +53,10 @@ export function renderDigestHtml(digest: DigestData): string {
           <tr>
             <td style="background-color:#1a2b4a;padding:24px 32px;">
               <h1 style="margin:0;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;color:#ffffff;">
-                Acadia Pharmaceuticals
+                Acadia Media Monitor
               </h1>
               <p style="margin:8px 0 0 0;font-family:Arial,sans-serif;font-size:14px;color:#aabbcc;">
-                Media Monitoring Digest &mdash; ${escapeHtml(formatDigestDate(digest.date))}
+                Media Monitoring Digest &mdash; ${escapeHtml(formatDigestDate(digestDateStr))}
               </p>
             </td>
           </tr>
@@ -74,7 +85,7 @@ export function renderDigestHtml(digest: DigestData): string {
           <tr>
             <td style="background-color:#f0f4f8;padding:16px 32px;border-top:1px solid #e0e0e0;">
               <p style="margin:0;font-family:Arial,sans-serif;font-size:11px;color:#888888;">
-                Coverage: ${escapeHtml(formatArticleDate(digest.coverageStart))} &ndash; ${escapeHtml(formatArticleDate(digest.coverageEnd))}
+                Coverage: ${escapeHtml(formatArticleDate(toDateString(digest.coverageStart)))} &ndash; ${escapeHtml(formatArticleDate(toDateString(digest.coverageEnd)))}
                 &nbsp;&bull;&nbsp; ${digest.totalItems} articles
               </p>
             </td>
@@ -92,7 +103,7 @@ function renderSectionHtml(section: DigestSection): string {
   const slug = section.section.slug;
   const sectionName = escapeHtml(section.section.name);
 
-  const itemsHtml = section.items.map(renderItemHtml).join("\n");
+  const itemsHtml = (section.items ?? []).map(renderItemHtml).join("\n");
 
   const subsectionsHtml = section.subsections
     .map((sub) => renderSubsectionHtml(sub))
@@ -100,7 +111,7 @@ function renderSectionHtml(section: DigestSection): string {
 
   const emptyHtml =
     !section.hasItems
-      ? `<p style="font-family:Arial,sans-serif;font-size:13px;color:#999999;font-style:italic;margin:0 0 8px 0;">No relevant news for this period.</p>`
+      ? `<p style="font-family:Arial,sans-serif;font-size:13px;color:#999999;font-style:italic;margin:0 0 8px 0;">No relevant news to report.</p>`
       : "";
 
   return `
@@ -116,12 +127,13 @@ function renderSectionHtml(section: DigestSection): string {
 }
 
 function renderSubsectionHtml(sub: DigestSubsection): string {
+  if (!sub.subsection) return "";
   const name = escapeHtml(sub.subsection.name);
   const itemsHtml = sub.items.map(renderItemHtml).join("\n");
 
   const emptyHtml =
     sub.items.length === 0
-      ? `<p style="font-family:Arial,sans-serif;font-size:13px;color:#999999;font-style:italic;margin:0 0 4px 0;">No relevant news for this period.</p>`
+      ? `<p style="font-family:Arial,sans-serif;font-size:13px;color:#999999;font-style:italic;margin:0 0 4px 0;">No relevant news to report.</p>`
       : "";
 
   return `
@@ -136,7 +148,7 @@ function renderSubsectionHtml(sub: DigestSubsection): string {
 
 function renderItemHtml(item: DigestItem): string {
   const outlet = escapeHtml(item.outletName);
-  const date = item.publishedAt ? escapeHtml(formatArticleDate(item.publishedAt)) : "";
+  const date = item.publishedAt ? escapeHtml(formatArticleDate(toPublishedAtString(item.publishedAt))) : "";
   const headline = escapeHtml(item.headline);
   const snippet = item.snippet ? escapeHtml(item.snippet) : "";
 
@@ -166,11 +178,12 @@ function renderItemHtml(item: DigestItem): string {
  */
 export function renderDigestMarkdown(digest: DigestData): string {
   const lines: string[] = [];
+  const digestDateStr = toDateString(digest.date);
 
-  lines.push(`# Acadia Media Digest — ${formatDigestDate(digest.date)}`);
+  lines.push(`# Acadia Media Monitor — ${formatDigestDate(digestDateStr)}`);
   lines.push("");
   lines.push(
-    `> Coverage: ${formatArticleDate(digest.coverageStart)} – ${formatArticleDate(digest.coverageEnd)} | ${digest.totalItems} articles`
+    `> Coverage: ${formatArticleDate(toDateString(digest.coverageStart))} – ${formatArticleDate(toDateString(digest.coverageEnd))} | ${digest.totalItems} articles`
   );
   lines.push("");
 
@@ -180,7 +193,7 @@ export function renderDigestMarkdown(digest: DigestData): string {
   }
 
   // Table of contents
-  const tocSections = digest.sections.filter((s) => s.hasItems);
+  const tocSections = digest.sections.filter((s: DigestSection) => s.hasItems);
   if (tocSections.length > 0) {
     lines.push("## Contents");
     lines.push("");
@@ -197,23 +210,23 @@ export function renderDigestMarkdown(digest: DigestData): string {
     lines.push("");
 
     if (!section.hasItems) {
-      lines.push("_No relevant news for this period._");
+      lines.push("_No relevant news to report._");
       lines.push("");
       continue;
     }
 
     // Direct items
-    for (const item of section.items) {
+    for (const item of (section.items ?? [])) {
       lines.push(renderItemMarkdown(item));
     }
 
     // Subsections
     for (const sub of section.subsections) {
-      lines.push(`### ${sub.subsection.name}`);
+      lines.push(`### ${sub.subsection?.name ?? ""}`);
       lines.push("");
 
       if (sub.items.length === 0) {
-        lines.push("_No relevant news for this period._");
+        lines.push("_No relevant news to report._");
         lines.push("");
         continue;
       }
@@ -229,17 +242,30 @@ export function renderDigestMarkdown(digest: DigestData): string {
 
 function renderItemMarkdown(item: DigestItem): string {
   const outlet = item.outletName;
-  const date = item.publishedAt ? formatArticleDate(item.publishedAt) : "";
+  const date = item.publishedAt ? formatArticleDate(toPublishedAtString(item.publishedAt)) : "";
   const meta = [outlet, date].filter(Boolean).join(" · ");
 
+  // Use snippet as the linked anchor text; if absent, derive from the
+  // last few words of the headline so the link text is concise.
+  const linkText = item.snippet ?? extractHeadlineTail(item.headline);
+
   const lines = [
-    `**[${item.headline}](${item.url})**`,
+    `**${item.headline}**`,
+    `[${linkText}](${item.url})`,
     meta ? `_${meta}_` : "",
-    item.snippet ?? "",
     "",
   ];
 
   return lines.filter((l) => l !== undefined).join("  \n") + "\n";
+}
+
+/**
+ * Extract the last meaningful phrase from a headline for use as a short link
+ * anchor text (≈ last 2 words).
+ */
+function extractHeadlineTail(headline: string): string {
+  const words = headline.trim().split(/\s+/);
+  return words.slice(-2).join(" ");
 }
 
 // ─── Utility ──────────────────────────────────────────────────────────────────

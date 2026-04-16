@@ -1,7 +1,7 @@
 import { createAdminClient } from "../supabase/admin";
 import { getAdapter } from "../adapters/registry";
 import type { AdapterConfig } from "../adapters/types";
-import type { SourceAdapterRow, ArticleInsert } from "../supabase/types";
+import type { SourceAdapterRow, ArticleInsert, IngestionRunInsert, IngestionRunUpdate, SourceAdapterUpdate } from "../supabase/types";
 import { normalizeTitle, normalizeUrl, extractSnippet, detectLanguage } from "./normalize";
 import { isDuplicateByUrl, isSimilarTitle, findCluster } from "./dedup";
 import type { ClusterCandidate } from "./dedup";
@@ -65,12 +65,13 @@ async function runSingleAdapterIngestion(
   const db = createAdminClient();
 
   // Create an ingestion_run record
+  const runInsert: IngestionRunInsert = {
+    source_adapter_id: adapterRow.id,
+    status: "running",
+  };
   const { data: runData, error: runError } = await db
     .from("ingestion_runs")
-    .insert({
-      source_adapter_id: adapterRow.id,
-      status: "running",
-    })
+    .insert(runInsert)
     .select("id")
     .single();
 
@@ -194,44 +195,47 @@ async function runSingleAdapterIngestion(
     }
 
     // Update adapter's last_fetched_at and last_cursor
+    const adapterUpdate: SourceAdapterUpdate = {
+      last_fetched_at: new Date().toISOString(),
+      last_cursor: fetchResult.cursor ?? adapterRow.last_cursor,
+      updated_at: new Date().toISOString(),
+    };
     await db
       .from("source_adapters")
-      .update({
-        last_fetched_at: new Date().toISOString(),
-        last_cursor: fetchResult.cursor ?? adapterRow.last_cursor,
-        updated_at: new Date().toISOString(),
-      })
+      .update(adapterUpdate)
       .eq("id", adapterRow.id);
 
     // Mark run as completed
+    const completedUpdate: IngestionRunUpdate = {
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      items_fetched: itemsFetched,
+      items_new: itemsNew,
+      items_duplicate: itemsDuplicate,
+      items_error: itemsError,
+      error_message: errors.length > 0 ? errors.slice(0, 3).join("; ") : null,
+    };
     await db
       .from("ingestion_runs")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-        items_fetched: itemsFetched,
-        items_new: itemsNew,
-        items_duplicate: itemsDuplicate,
-        items_error: itemsError,
-        error_message: errors.length > 0 ? errors.slice(0, 3).join("; ") : null,
-      })
+      .update(completedUpdate)
       .eq("id", runId);
   } catch (err) {
     const errMsg = (err as Error).message;
     errors.push(errMsg);
 
     // Mark run as failed
+    const failedUpdate: IngestionRunUpdate = {
+      status: "failed",
+      completed_at: new Date().toISOString(),
+      items_fetched: itemsFetched,
+      items_new: itemsNew,
+      items_duplicate: itemsDuplicate,
+      items_error: itemsError,
+      error_message: errMsg.slice(0, 500),
+    };
     await db
       .from("ingestion_runs")
-      .update({
-        status: "failed",
-        completed_at: new Date().toISOString(),
-        items_fetched: itemsFetched,
-        items_new: itemsNew,
-        items_duplicate: itemsDuplicate,
-        items_error: itemsError,
-        error_message: errMsg.slice(0, 500),
-      })
+      .update(failedUpdate)
       .eq("id", runId);
   }
 

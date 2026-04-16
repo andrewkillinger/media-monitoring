@@ -41,9 +41,9 @@ export class TwitterManualAdapter implements SourceAdapter {
     const startedAt = Date.now();
 
     // Validate required fields
-    const errs = this.validate(config);
-    if (errs.length > 0) {
-      throw new AdapterError(errs.join("; "), this.type);
+    const validation = this.validate(config);
+    if (!validation.valid && validation.errors && validation.errors.length > 0) {
+      throw new AdapterError(validation.errors.join("; "), this.type);
     }
 
     const input: TwitterPostInput = {

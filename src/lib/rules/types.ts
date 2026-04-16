@@ -11,12 +11,19 @@ import type {
 
 // ─── Entity with its aliases (re-exported from here for convenience) ──────────
 
-export interface EntityWithAliases extends EntityRow {
+export interface EntityWithAliases extends Omit<EntityRow, "parent_entity_id" | "metadata" | "is_active" | "created_at" | "updated_at"> {
+  parent_entity_id?: string | null;
+  metadata?: Record<string, unknown>;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
   aliases: Array<Pick<EntityAliasRow, "alias_text" | "is_primary">>;
   /** Product names if this entity has related product entities */
   products?: string[];
-  /** Disease state names associated with this entity */
+  /** Disease state names associated with this entity (camelCase) */
   diseaseStates?: string[];
+  /** Disease state names — snake_case alias for compatibility with test data */
+  disease_states?: string[];
 }
 
 // ─── Outlet with tier info (for engine construction) ─────────────────────────
