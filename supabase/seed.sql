@@ -1,0 +1,18 @@
+-- Acadia Media Monitor - Seed Data
+-- Run each file in supabase/seed/ in numerical order.
+-- In Supabase Dashboard SQL Editor, copy/paste each file individually.
+-- Or if using psql:
+--   \i supabase/seed/01_disease_states.sql
+--   \i supabase/seed/02_entities.sql
+--   \i supabase/seed/03_entity_aliases.sql
+--   \i supabase/seed/04_entity_disease_states.sql
+--   \i supabase/seed/05_sections.sql
+--   \i supabase/seed/06_outlets.sql
+--   \i supabase/seed/07_outlet_lists.sql
+--   \i supabase/seed/08_rules.sql
+--   \i supabase/seed/09_schedules.sql
+--   \i supabase/seed/10_demo_articles.sql
+--   \i supabase/seed/11_source_adapters.sql
+
+-- This file intentionally left as documentation.
+-- See supabase/seed/ directory for individual seed files.

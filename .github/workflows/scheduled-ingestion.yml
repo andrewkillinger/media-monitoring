@@ -1,0 +1,55 @@
+name: Scheduled Ingestion
+
+on:
+  schedule:
+    # Run every 30 minutes during business hours (ET: 6am-7pm = UTC: 11:00-00:00)
+    - cron: "*/30 11-23 * * 1-5"
+    # Run hourly outside business hours on weekdays
+    - cron: "0 0-10 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      source_ids:
+        description: "Comma-separated source adapter IDs (empty = all active)"
+        required: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger ingestion
+        run: |
+          curl -X POST "${{ secrets.APP_URL }}/api/ingest" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -d '{"sourceIds": "${{ github.event.inputs.source_ids }}"}'
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+
+  generate-digest:
+    runs-on: ubuntu-latest
+    needs: ingest
+    # Only run the digest generation on weekdays at the scheduled newsletter time
+    if: github.event.schedule == '*/30 11-23 * * 1-5'
+    steps:
+      - name: Check if digest time (8:00 AM PT / 15:00 UTC)
+        id: check_time
+        run: |
+          HOUR=$(date -u +%H)
+          MINUTE=$(date -u +%M)
+          if [ "$HOUR" = "15" ] && [ "$MINUTE" -lt "30" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate daily digest
+        if: steps.check_time.outputs.should_run == 'true'
+        run: |
+          curl -X POST "${{ secrets.APP_URL }}/api/digest/generate" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -d '{"date": "'$(date -u +%Y-%m-%d)'"}'
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
