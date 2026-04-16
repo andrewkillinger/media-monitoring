@@ -79,7 +79,7 @@ export class ManualUrlAdapter implements SourceAdapter {
         redirect: "follow",
         headers: {
           "User-Agent":
-            "Mozilla/5.0 (compatible; Acadia-MediaMonitor/1.0; +https://acadia.com)",
+            "Mozilla/5.0 (compatible; MediaMonitor/1.0)",
           Accept: "text/html,application/xhtml+xml",
         },
         signal: AbortSignal.timeout(15_000),

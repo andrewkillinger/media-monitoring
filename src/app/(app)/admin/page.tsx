@@ -23,7 +23,7 @@ const demoUsers = [
   {
     id: "u1",
     name: "Sarah Chen",
-    email: "sarah.chen@acadia.com",
+    email: "sarah.chen@example.com",
     role: "admin",
     lastLogin: "2025-04-15T16:30:00Z",
     status: "active",
@@ -31,7 +31,7 @@ const demoUsers = [
   {
     id: "u2",
     name: "Michael Park",
-    email: "michael.park@acadia.com",
+    email: "michael.park@example.com",
     role: "editor",
     lastLogin: "2025-04-15T15:00:00Z",
     status: "active",
@@ -39,7 +39,7 @@ const demoUsers = [
   {
     id: "u3",
     name: "Lisa Wang",
-    email: "lisa.wang@acadia.com",
+    email: "lisa.wang@example.com",
     role: "reviewer",
     lastLogin: "2025-04-14T10:00:00Z",
     status: "active",

@@ -4,7 +4,7 @@ import { AdapterError } from "./types";
 
 const parser = new Parser({
   timeout: 15_000,
-  headers: { "User-Agent": "Acadia-MediaMonitor/1.0" },
+  headers: { "User-Agent": "MediaMonitor/1.0" },
 });
 
 export class RssAdapter implements SourceAdapter {

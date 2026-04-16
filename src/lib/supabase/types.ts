@@ -1,4 +1,4 @@
-// Database type definitions for Acadia Media Monitoring
+// Database type definitions for Media Monitoring
 // Generated from supabase/migrations schema
 
 // ─── Enum types ──────────────────────────────────────────────────────────────
@@ -116,9 +116,9 @@ export type OutletListType = "priority" | "exclude" | "monitor";
 export type MatchLocation = "title" | "body" | "both";
 
 export type FlagType =
-  | "acadia_earned"
-  | "acadia_data"
-  | "acadia_personnel"
+  | "earned_media"
+  | "company_data"
+  | "company_personnel"
   | "catch_correct"
   | "issues_related"
   | "competitor_milestone"
