@@ -8,7 +8,7 @@ export function getPool(): Pool {
     if (!connectionString) {
       throw new Error(
         "Missing DATABASE_URL environment variable. " +
-          "Set it to a PostgreSQL connection string, e.g. postgresql://acadia:acadia@localhost:5432/media_monitoring"
+          "Set it to a PostgreSQL connection string, e.g. postgresql://user:password@localhost:5432/media_monitoring"
       );
     }
     pool = new Pool({ connectionString });

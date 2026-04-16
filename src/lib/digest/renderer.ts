@@ -40,7 +40,7 @@ export function renderDigestHtml(digest: DigestData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Acadia Media Monitor – ${escapeHtml(formatDigestDate(digestDateStr))}</title>
+  <title>Media Monitor – ${escapeHtml(formatDigestDate(digestDateStr))}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Arial,sans-serif;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;">
@@ -53,7 +53,7 @@ export function renderDigestHtml(digest: DigestData): string {
           <tr>
             <td style="background-color:#1a2b4a;padding:24px 32px;">
               <h1 style="margin:0;font-family:Arial,sans-serif;font-size:22px;font-weight:bold;color:#ffffff;">
-                Acadia Media Monitor
+                Media Monitor
               </h1>
               <p style="margin:8px 0 0 0;font-family:Arial,sans-serif;font-size:14px;color:#aabbcc;">
                 Media Monitoring Digest &mdash; ${escapeHtml(formatDigestDate(digestDateStr))}
@@ -180,7 +180,7 @@ export function renderDigestMarkdown(digest: DigestData): string {
   const lines: string[] = [];
   const digestDateStr = toDateString(digest.date);
 
-  lines.push(`# Acadia Media Monitor — ${formatDigestDate(digestDateStr)}`);
+  lines.push(`# Media Monitor — ${formatDigestDate(digestDateStr)}`);
   lines.push("");
   lines.push(
     `> Coverage: ${formatArticleDate(toDateString(digest.coverageStart))} – ${formatArticleDate(toDateString(digest.coverageEnd))} | ${digest.totalItems} articles`

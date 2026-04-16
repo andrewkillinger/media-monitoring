@@ -1,875 +1,845 @@
 "use client";
 
-import Link from "next/link";
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from "recharts";
-import { demoArticles, demoKpis, demoVolumeData, demoTopOutlets } from "@/lib/demo-data";
-import { cn } from "@/lib/utils";
+import { useState, useMemo } from "react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  demoKpis,
+  demoVolumeData,
+  demoSectionDistribution,
+  demoTopOutlets,
+  demoTopCompetitors,
+} from "@/lib/demo-data";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
-// ─── Data preparation ─────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const visibleArticles = demoArticles
-  .filter((a) => a.status === "published" || a.status === "reviewed")
-  .sort((a, b) => b.priority - a.priority);
+type DateRangePreset = "today" | "7d" | "14d" | "30d" | "90d" | "custom";
+type OutletSortKey = "name" | "count";
 
-const heroArticle = visibleArticles[0];
-const secondaryArticles = visibleArticles.slice(1, 4);
-const remainingArticles = visibleArticles.slice(4);
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
 
-// Group remaining articles by section
-const sectionMap = new Map<string, typeof remainingArticles>();
-for (const article of remainingArticles) {
-  const key = article.section;
-  if (!sectionMap.has(key)) sectionMap.set(key, []);
-  sectionMap.get(key)!.push(article);
-}
-const sectionEntries = Array.from(sectionMap.entries());
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function articleHref(id: string) {
-  return `/feed/${id}`;
-}
-
-function SectionTag({ label, section }: { label: string; section: string }) {
-  const isAcadia = section.toLowerCase().includes("acadia");
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        fontSize: "9px",
-        fontFamily: "Roboto, system-ui, sans-serif",
-        fontWeight: 700,
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
-        padding: "2px 5px",
-        border: isAcadia ? "1px solid #068798" : "1px solid #9ca3af",
-        color: isAcadia ? "#068798" : "#6b7280",
-        lineHeight: 1.5,
-        verticalAlign: "middle",
-      }}
-    >
-      {label}
-    </span>
-  );
+interface KpiCardProps {
+  title: string;
+  value: number;
+  trend?: "up" | "down" | "neutral";
+  trendLabel?: string;
+  accent?: boolean;
 }
 
-function OutletByline({
-  outlet,
-  date,
-  channel,
-}: {
-  outlet: string;
-  date: string;
-  channel?: string;
-}) {
-  const formatted =
-    date
-      ? new Date(date + "T12:00:00").toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        })
-      : null;
-  return (
-    <p
-      style={{
-        fontFamily: "Roboto, system-ui, sans-serif",
-        fontSize: "10px",
-        color: "#6b7280",
-        letterSpacing: "0.07em",
-        textTransform: "uppercase",
-        margin: 0,
-        lineHeight: 1.5,
-      }}
-    >
-      <span style={{ color: "#374151", fontWeight: 600 }}>{outlet}</span>
-      {channel && channel !== "online" && (
-        <span style={{ color: "#9ca3af" }}> · {channel}</span>
-      )}
-      {formatted && (
-        <span style={{ color: "#9ca3af" }}> · {formatted}</span>
-      )}
-    </p>
-  );
-}
-
-// Thin 1 px rule — newspaper column divider
-const THIN_RULE = (
-  <hr
-    style={{
-      border: "none",
-      borderTop: "1px solid #cbd5e0",
-      margin: 0,
-    }}
-  />
-);
-
-// Heavy top border used under masthead and between major zones
-const THICK_RULE = (
-  <hr
-    style={{
-      border: "none",
-      borderTop: "3px solid #032930",
-      margin: 0,
-    }}
-  />
-);
-
-// ─── Hero Story ───────────────────────────────────────────────────────────────
-
-function HeroStory() {
-  if (!heroArticle) return null;
-  const isFlagged = !!heroArticle.flagType;
-  const isNegative = heroArticle.sentiment === "negative";
+function KpiCard({ title, value, trend, trendLabel, accent }: KpiCardProps) {
+  const trendIcon =
+    trend === "up" ? "▲" : trend === "down" ? "▼" : null;
+  const trendColor =
+    trend === "up"
+      ? "#16a34a"
+      : trend === "down"
+      ? "#dc2626"
+      : "var(--muted-foreground)";
 
   return (
-    <article
+    <Card
       style={{
-        borderLeft: isFlagged ? "4px solid #F56A00" : undefined,
-        paddingLeft: isFlagged ? "16px" : undefined,
+        borderLeft: accent ? "4px solid #dc2626" : undefined,
       }}
     >
-      {/* Metadata row */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          marginBottom: "10px",
-          flexWrap: "wrap",
-        }}
-      >
-        <SectionTag label={heroArticle.section} section={heroArticle.section} />
-        {isFlagged && (
-          <span
-            style={{
-              fontSize: "9px",
-              fontFamily: "Roboto, system-ui, sans-serif",
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "#F56A00",
-            }}
-          >
-            &#9679; Flagged
-          </span>
-        )}
-        {heroArticle.isPaywalled && (
-          <span
-            style={{
-              fontSize: "9px",
-              fontFamily: "Roboto, system-ui, sans-serif",
-              color: "#9ca3af",
-              letterSpacing: "0.05em",
-            }}
-          >
-            [Paywall]
-          </span>
-        )}
-      </div>
-
-      {/* Headline */}
-      <Link href={articleHref(heroArticle.id)} style={{ textDecoration: "none", color: "inherit" }}>
-        <h2
-          className={cn("hero-headline")}
+      <CardHeader className="pb-2">
+        <CardTitle
           style={{
-            fontFamily: 'Georgia, "Palatino Linotype", Palatino, serif',
-            fontSize: "28px",
-            fontWeight: 700,
-            lineHeight: 1.18,
-            color: "#032930",
-            margin: "0 0 12px 0",
-            letterSpacing: "-0.015em",
-          }}
-        >
-          {heroArticle.title}
-        </h2>
-      </Link>
-
-      <OutletByline
-        outlet={heroArticle.outlet}
-        date={heroArticle.date}
-        channel={heroArticle.channel}
-      />
-
-      {/* Lede */}
-      <p
-        style={{
-          fontFamily: 'Georgia, "Palatino Linotype", Palatino, serif',
-          fontSize: "15px",
-          lineHeight: 1.75,
-          color: isNegative ? "#4a2020" : "#1a202c",
-          margin: "12px 0 0 0",
-        }}
-      >
-        {heroArticle.summary}
-      </p>
-
-      {isNegative && (
-        <p
-          style={{
-            fontFamily: "Roboto, system-ui, sans-serif",
-            fontSize: "10px",
-            color: "#9b2c2c",
-            fontWeight: 700,
+            fontSize: "12px",
+            fontWeight: 600,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
-            margin: "10px 0 0 0",
+            color: "var(--muted-foreground)",
           }}
         >
-          &#9660; Negative Sentiment
-        </p>
-      )}
-    </article>
-  );
-}
-
-// ─── Secondary Story ──────────────────────────────────────────────────────────
-
-function SecondaryStory({
-  article,
-  dividerTop = true,
-}: {
-  article: (typeof visibleArticles)[0];
-  dividerTop?: boolean;
-}) {
-  const isFlagged = !!article.flagType;
-  const isNegative = article.sentiment === "negative";
-
-  return (
-    <article
-      style={{
-        paddingTop: dividerTop ? "14px" : undefined,
-        borderTop: dividerTop ? "1px solid #cbd5e0" : undefined,
-        borderLeft: isFlagged ? "3px solid #F56A00" : undefined,
-        paddingLeft: isFlagged ? "10px" : undefined,
-        marginBottom: "18px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          marginBottom: "6px",
-        }}
-      >
-        <SectionTag label={article.section} section={article.section} />
-        {isFlagged && (
-          <span style={{ fontSize: "9px", color: "#F56A00", fontWeight: 700 }}>
-            &#9679;
-          </span>
-        )}
-      </div>
-
-      <Link href={articleHref(article.id)} style={{ textDecoration: "none", color: "inherit" }}>
-        <h3
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p
           style={{
-            fontFamily: 'Georgia, "Palatino Linotype", Palatino, serif',
-            fontSize: "18px",
+            fontSize: "36px",
             fontWeight: 700,
-            lineHeight: 1.22,
-            color: "#032930",
-            margin: "0 0 8px 0",
+            lineHeight: 1,
+            color: accent ? "#dc2626" : "var(--foreground)",
+            fontVariantNumeric: "tabular-nums",
+            margin: "0 0 6px 0",
           }}
         >
-          {article.title}
-        </h3>
-      </Link>
-
-      <OutletByline outlet={article.outlet} date={article.date} channel={article.channel} />
-
-      <p
-        style={{
-          fontFamily: "Roboto, system-ui, sans-serif",
-          fontSize: "13px",
-          lineHeight: 1.6,
-          color: isNegative ? "#4a2020" : "#374151",
-          margin: "8px 0 0 0",
-          display: "-webkit-box",
-          WebkitLineClamp: 3,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }}
-      >
-        {article.summary}
-      </p>
-    </article>
+          {value}
+        </p>
+        {trendIcon && trendLabel && (
+          <p
+            style={{
+              fontSize: "12px",
+              color: trendColor,
+              margin: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "3px",
+            }}
+          >
+            <span>{trendIcon}</span>
+            <span>{trendLabel}</span>
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-// ─── Section Column Article ───────────────────────────────────────────────────
+// ─── Date range selector ──────────────────────────────────────────────────────
 
-function SectionArticle({ article }: { article: (typeof visibleArticles)[0] }) {
-  const isNegative = article.sentiment === "negative";
-  const isFlagged = !!article.flagType;
+interface DateRangeSelectorProps {
+  activePreset: DateRangePreset;
+  customFrom: string;
+  customTo: string;
+  onPreset: (preset: DateRangePreset) => void;
+  onCustomFrom: (v: string) => void;
+  onCustomTo: (v: string) => void;
+}
 
+// Preset buttons: Today, 7 Days, 30 Days, 90 Days, Custom.
+// 14 days is the default state value but has no button.
+const PRESETS: { key: DateRangePreset; label: string }[] = [
+  { key: "today", label: "Today" },
+  { key: "7d", label: "7 Days" },
+  { key: "30d", label: "30 Days" },
+  { key: "90d", label: "90 Days" },
+];
+
+function DateRangeSelector({
+  activePreset,
+  customFrom,
+  customTo,
+  onPreset,
+  onCustomFrom,
+  onCustomTo,
+}: DateRangeSelectorProps) {
   return (
     <div
       style={{
-        marginBottom: "13px",
-        paddingBottom: "13px",
-        borderBottom: "1px solid #e9ecef",
-        borderLeft: isFlagged ? "3px solid #F56A00" : undefined,
-        paddingLeft: isFlagged ? "9px" : undefined,
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: "8px",
       }}
     >
-      <Link href={articleHref(article.id)} style={{ textDecoration: "none" }}>
-        <p
-          style={{
-            fontFamily: 'Georgia, "Palatino Linotype", Palatino, serif',
-            fontSize: "14px",
-            fontWeight: 700,
-            lineHeight: 1.35,
-            color: "#032930",
-            margin: "0 0 4px 0",
-            transition: "color 0.1s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.color = "#068798";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.color = "#032930";
-          }}
+      {PRESETS.map(({ key, label }) => (
+        <Button
+          key={key}
+          size="sm"
+          variant={activePreset === key ? "default" : "outline"}
+          onClick={() => onPreset(key)}
+          style={
+            activePreset === key
+              ? { background: "#4F46E5", color: "#fff", borderColor: "#4F46E5" }
+              : undefined
+          }
         >
-          {article.title}
-        </p>
-      </Link>
-
-      <p
-        style={{
-          fontFamily: "Roboto, system-ui, sans-serif",
-          fontSize: "10px",
-          color: "#6b7280",
-          letterSpacing: "0.06em",
-          textTransform: "uppercase",
-          fontWeight: 600,
-          margin: "0 0 4px 0",
-        }}
+          {label}
+        </Button>
+      ))}
+      <Button
+        size="sm"
+        variant={activePreset === "custom" ? "default" : "outline"}
+        onClick={() => onPreset("custom")}
+        style={
+          activePreset === "custom"
+            ? { background: "#4F46E5", color: "#fff", borderColor: "#4F46E5" }
+            : undefined
+        }
       >
-        {article.outlet}
-        {article.isPaywalled && (
-          <span style={{ color: "#9ca3af", fontWeight: 400 }}> [Paywall]</span>
-        )}
-      </p>
-
-      <p
-        style={{
-          fontFamily: "Roboto, system-ui, sans-serif",
-          fontSize: "12px",
-          lineHeight: 1.55,
-          color: isNegative ? "#7f1d1d" : "#4b5563",
-          margin: 0,
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }}
-      >
-        {article.summary}
-      </p>
-    </div>
-  );
-}
-
-// ─── Sparkline ────────────────────────────────────────────────────────────────
-
-function VolumeSparkline() {
-  return (
-    <div style={{ height: "58px" }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <AreaChart
-          data={demoVolumeData}
-          margin={{ top: 2, right: 0, left: 0, bottom: 2 }}
-        >
-          <defs>
-            <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#068798" stopOpacity={0.22} />
-              <stop offset="95%" stopColor="#068798" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <Tooltip
-            contentStyle={{
-              background: "#032930",
-              border: "none",
-              borderRadius: "2px",
-              fontSize: "11px",
-              color: "#fff",
+        Custom
+      </Button>
+      {activePreset === "custom" && (
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <input
+            type="date"
+            value={customFrom}
+            onChange={(e) => onCustomFrom(e.target.value)}
+            style={{
               padding: "4px 8px",
-            }}
-            itemStyle={{ color: "#6BC8C7" }}
-            labelStyle={{ color: "#9ca3af", fontSize: "10px" }}
-          />
-          <Area
-            type="monotone"
-            dataKey="total"
-            stroke="#068798"
-            strokeWidth={1.5}
-            fill="url(#sparkGrad)"
-            dot={false}
-            name="Total"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
-  );
-}
-
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
-
-function Sidebar() {
-  const flaggedCount = visibleArticles.filter((a) => a.flagType).length;
-
-  return (
-    <aside
-      style={{
-        width: "260px",
-        flexShrink: 0,
-        borderLeft: "1px solid #cbd5e0",
-        paddingLeft: "22px",
-      }}
-    >
-      {/* Flagged Items — appears first if flagged items exist */}
-      {flaggedCount > 0 && (
-        <div style={{ marginBottom: "22px" }}>
-          <h4
-            style={{
-              fontFamily: "Roboto, system-ui, sans-serif",
-              fontSize: "10px",
-              fontWeight: 700,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "#F56A00",
-              margin: "0 0 5px 0",
-            }}
-          >
-            Flagged Items
-          </h4>
-          <hr
-            style={{
-              border: "none",
-              borderTop: "2px solid #F56A00",
-              margin: "0 0 10px 0",
+              borderRadius: "var(--radius-md, 6px)",
+              border: "1px solid var(--border)",
+              fontSize: "13px",
+              background: "var(--background)",
+              color: "var(--foreground)",
             }}
           />
-          <div
+          <span style={{ color: "var(--muted-foreground)", fontSize: "13px" }}>
+            to
+          </span>
+          <input
+            type="date"
+            value={customTo}
+            onChange={(e) => onCustomTo(e.target.value)}
             style={{
-              padding: "10px 12px",
-              borderLeft: "3px solid #F56A00",
-              background: "#fff8f3",
+              padding: "4px 8px",
+              borderRadius: "var(--radius-md, 6px)",
+              border: "1px solid var(--border)",
+              fontSize: "13px",
+              background: "var(--background)",
+              color: "var(--foreground)",
             }}
-          >
-            <p
-              style={{
-                fontFamily: 'Georgia, "Palatino Linotype", Palatino, serif',
-                fontSize: "32px",
-                fontWeight: 700,
-                color: "#9a3412",
-                margin: 0,
-                lineHeight: 1,
-              }}
-            >
-              {flaggedCount}
-            </p>
-            <p
-              style={{
-                fontFamily: "Roboto, system-ui, sans-serif",
-                fontSize: "11px",
-                color: "#b45309",
-                margin: "4px 0 0 0",
-              }}
-            >
-              {flaggedCount === 1 ? "item requires" : "items require"} immediate attention
-            </p>
-          </div>
+          />
         </div>
       )}
+    </div>
+  );
+}
 
-      {/* By the Numbers */}
-      <div style={{ marginBottom: "22px" }}>
-        <h4
-          style={{
-            fontFamily: "Roboto, system-ui, sans-serif",
-            fontSize: "10px",
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "#084A51",
-            margin: "0 0 5px 0",
-          }}
-        >
-          By the Numbers
-        </h4>
-        <hr
-          style={{
-            border: "none",
-            borderTop: "2px solid #084A51",
-            margin: "0 0 10px 0",
-          }}
-        />
-        <div>
-          {[
-            { label: "Total Items", value: demoKpis.totalItems, emphasis: false },
-            { label: "Included", value: demoKpis.included, emphasis: false },
-            { label: "Acadia Mentions", value: demoKpis.acadiaMentions, emphasis: true },
-            { label: "Competitor Items", value: demoKpis.competitorItems, emphasis: false },
-            { label: "Social Items", value: demoKpis.socialItems, emphasis: false },
-            { label: "Broadcast", value: demoKpis.broadcastItems, emphasis: false },
-            { label: "Pending Review", value: demoKpis.pendingReview, emphasis: false },
-          ].map(({ label, value, emphasis }) => (
-            <div
-              key={label}
+// ─── Selected day banner ──────────────────────────────────────────────────────
+
+interface SelectedDayBannerProps {
+  day: (typeof demoVolumeData)[0] | null;
+  onClear: () => void;
+}
+
+function SelectedDayBanner({ day, onClear }: SelectedDayBannerProps) {
+  if (!day) return null;
+  return (
+    <div
+      style={{
+        padding: "10px 16px",
+        background: "#EEF2FF",
+        border: "1px solid #C7D2FE",
+        borderRadius: "var(--radius-md, 6px)",
+        display: "flex",
+        alignItems: "center",
+        gap: "16px",
+        flexWrap: "wrap",
+        marginBottom: "16px",
+      }}
+    >
+      <span style={{ fontSize: "13px", fontWeight: 600, color: "#4F46E5" }}>
+        {day.date}
+      </span>
+      <span style={{ fontSize: "13px", color: "#3730A3" }}>
+        Total: <strong>{day.total}</strong>
+      </span>
+      <span style={{ fontSize: "13px", color: "#3730A3" }}>
+        Primary Mentions: <strong>{day.primary}</strong>
+      </span>
+      <span style={{ fontSize: "13px", color: "#3730A3" }}>
+        Competitor: <strong>{day.competitor}</strong>
+      </span>
+      <button
+        onClick={onClear}
+        style={{
+          marginLeft: "auto",
+          background: "transparent",
+          border: "none",
+          color: "#6366F1",
+          cursor: "pointer",
+          fontSize: "13px",
+          padding: "0",
+        }}
+      >
+        Clear ✕
+      </button>
+    </div>
+  );
+}
+
+// ─── Top Outlets table ────────────────────────────────────────────────────────
+
+function OutletsTable() {
+  const [sortKey, setSortKey] = useState<OutletSortKey>("count");
+  const [sortAsc, setSortAsc] = useState(false);
+
+  const sorted = useMemo(() => {
+    return [...demoTopOutlets].sort((a, b) => {
+      const av = sortKey === "count" ? a.count : a.name;
+      const bv = sortKey === "count" ? b.count : b.name;
+      if (av < bv) return sortAsc ? -1 : 1;
+      if (av > bv) return sortAsc ? 1 : -1;
+      return 0;
+    });
+  }, [sortKey, sortAsc]);
+
+  function handleSort(key: OutletSortKey) {
+    if (sortKey === key) {
+      setSortAsc((v) => !v);
+    } else {
+      setSortKey(key);
+      setSortAsc(key === "name");
+    }
+  }
+
+  const tierLabel: Record<string, string> = {
+    tier1: "Tier 1",
+    trade: "Trade",
+  };
+
+  function SortIcon({ col }: { col: OutletSortKey }) {
+    if (sortKey !== col)
+      return <span style={{ color: "var(--muted-foreground)" }}> ⇅</span>;
+    return <span style={{ color: "#4F46E5" }}>{sortAsc ? " ▲" : " ▼"}</span>;
+  }
+
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+      <thead>
+        <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "left" }}>
+          <th
+            style={{
+              padding: "8px 0",
+              fontWeight: 600,
+              cursor: "pointer",
+              userSelect: "none",
+              color: "var(--foreground)",
+            }}
+            onClick={() => handleSort("name")}
+          >
+            Outlet
+            <SortIcon col="name" />
+          </th>
+          <th
+            style={{
+              padding: "8px 0",
+              fontWeight: 600,
+              cursor: "pointer",
+              userSelect: "none",
+              textAlign: "right",
+              color: "var(--foreground)",
+            }}
+            onClick={() => handleSort("count")}
+          >
+            Articles
+            <SortIcon col="count" />
+          </th>
+          <th
+            style={{
+              padding: "8px 0",
+              fontWeight: 600,
+              color: "var(--foreground)",
+              paddingLeft: "16px",
+            }}
+          >
+            Tier
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {sorted.map((outlet, idx) => (
+          <tr
+            key={outlet.name}
+            style={{
+              borderBottom: "1px solid var(--border)",
+              background: idx % 2 === 0 ? "transparent" : "var(--muted)",
+            }}
+          >
+            <td style={{ padding: "9px 0", color: "var(--foreground)" }}>
+              {outlet.name}
+            </td>
+            <td
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                padding: "5px 0",
-                borderBottom: "1px solid #f1f5f9",
+                padding: "9px 0",
+                textAlign: "right",
+                fontWeight: 600,
+                fontVariantNumeric: "tabular-nums",
+                color: "#4F46E5",
               }}
             >
+              {outlet.count}
+            </td>
+            <td style={{ padding: "9px 0", paddingLeft: "16px" }}>
               <span
                 style={{
-                  fontFamily: "Roboto, system-ui, sans-serif",
-                  fontSize: "12px",
-                  color: "#4b5563",
+                  display: "inline-block",
+                  padding: "2px 7px",
+                  borderRadius: "999px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  background:
+                    outlet.tier === "tier1" ? "#EEF2FF" : "var(--muted)",
+                  color:
+                    outlet.tier === "tier1" ? "#4F46E5" : "var(--muted-foreground)",
                 }}
               >
-                {label}
+                {tierLabel[outlet.tier] ?? outlet.tier}
               </span>
-              <span
-                style={{
-                  fontFamily: "Roboto, system-ui, sans-serif",
-                  fontSize: "16px",
-                  fontWeight: 700,
-                  color: emphasis ? "#084A51" : "#032930",
-                  fontVariantNumeric: "tabular-nums",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                {value}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
-      {/* 14-Day Volume Sparkline */}
-      <div style={{ marginBottom: "22px" }}>
-        <h4
-          style={{
-            fontFamily: "Roboto, system-ui, sans-serif",
-            fontSize: "10px",
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "#084A51",
-            margin: "0 0 5px 0",
-          }}
-        >
-          14-Day Volume
-        </h4>
-        <hr
-          style={{
-            border: "none",
-            borderTop: "2px solid #084A51",
-            margin: "0 0 10px 0",
-          }}
-        />
-        <VolumeSparkline />
-        <p
-          style={{
-            fontFamily: "Roboto, system-ui, sans-serif",
-            fontSize: "10px",
-            color: "#9ca3af",
-            margin: "4px 0 0 0",
-            textAlign: "right",
-          }}
-        >
-          Apr 2 — Apr 15
-        </p>
-      </div>
+// ─── Top Entities / Competitors table ─────────────────────────────────────────
 
-      {/* Top Outlets */}
-      <div>
-        <h4
-          style={{
-            fontFamily: "Roboto, system-ui, sans-serif",
-            fontSize: "10px",
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "#084A51",
-            margin: "0 0 5px 0",
-          }}
-        >
-          Top Outlets
-        </h4>
-        <hr
-          style={{
-            border: "none",
-            borderTop: "2px solid #084A51",
-            margin: "0 0 10px 0",
-          }}
-        />
-        <div>
-          {demoTopOutlets.slice(0, 6).map((outlet, idx) => (
-            <div
-              key={outlet.name}
+function CompetitorsTable() {
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+      <thead>
+        <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "left" }}>
+          <th style={{ padding: "8px 0", fontWeight: 600, color: "var(--foreground)" }}>
+            Entity
+          </th>
+          <th
+            style={{
+              padding: "8px 0",
+              fontWeight: 600,
+              textAlign: "right",
+              color: "var(--foreground)",
+            }}
+          >
+            Mentions
+          </th>
+          <th
+            style={{
+              padding: "8px 0",
+              fontWeight: 600,
+              paddingLeft: "16px",
+              color: "var(--foreground)",
+            }}
+          >
+            Area
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {demoTopCompetitors.map((comp, idx) => (
+          <tr
+            key={comp.name}
+            style={{
+              borderBottom: "1px solid var(--border)",
+              background: idx % 2 === 0 ? "transparent" : "var(--muted)",
+            }}
+          >
+            <td style={{ padding: "9px 0", color: "var(--foreground)" }}>
+              {comp.name}
+            </td>
+            <td
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                padding: "5px 0",
-                borderBottom: "1px solid #f1f5f9",
+                padding: "9px 0",
+                textAlign: "right",
+                fontWeight: 600,
+                fontVariantNumeric: "tabular-nums",
+                color: "#4F46E5",
               }}
             >
-              <span
-                style={{
-                  fontFamily: "Roboto, system-ui, sans-serif",
-                  fontSize: "12px",
-                  color: idx < 3 ? "#032930" : "#6b7280",
-                  fontWeight: idx < 3 ? 600 : 400,
-                }}
-              >
-                {outlet.name}
-              </span>
-              <span
-                style={{
-                  fontFamily: "Roboto, system-ui, sans-serif",
-                  fontSize: "12px",
-                  color: "#9ca3af",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {outlet.count}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </aside>
+              {comp.mentions}
+            </td>
+            <td
+              style={{
+                padding: "9px 0",
+                paddingLeft: "16px",
+                color: "var(--muted-foreground)",
+                fontSize: "12px",
+              }}
+            >
+              {comp.disease}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const flaggedCount = visibleArticles.filter((a) => a.flagType).length;
-  const acadiaMentions = visibleArticles.filter((a) =>
-    a.entities.some((e) => e.toLowerCase().includes("acadia"))
-  ).length;
+  // Date range state — default 14 days (no button; just the initial state)
+  const [activePreset, setActivePreset] = useState<DateRangePreset>("14d");
+  const [customFrom, setCustomFrom] = useState("2026-03-17");
+  const [customTo, setCustomTo] = useState("2026-04-16");
+
+  // Selected day from volume chart click
+  const [selectedDay, setSelectedDay] = useState<
+    (typeof demoVolumeData)[0] | null
+  >(null);
+
+  function handlePreset(preset: DateRangePreset) {
+    setActivePreset(preset);
+    if (preset !== "custom") setSelectedDay(null);
+  }
+
+  // KPI cards
+  const kpis: KpiCardProps[] = [
+    {
+      title: "Total Articles",
+      value: demoKpis.totalItems,
+      trend: "up",
+      trendLabel: "+12% vs prior period",
+    },
+    {
+      title: "Sections Covered",
+      value: demoSectionDistribution.length,
+      trend: "neutral",
+    },
+    {
+      title: "Flagged Items",
+      value: demoKpis.flagged,
+      trend: "down",
+      trendLabel: "-2 vs prior period",
+      accent: true,
+    },
+    {
+      title: "Pending Review",
+      value: demoKpis.pendingReview,
+      trend: "neutral",
+    },
+  ];
 
   return (
     <div
       style={{
-        maxWidth: "1200px",
+        maxWidth: "1280px",
         margin: "0 auto",
-        padding: "0 20px 56px",
-        background: "#ffffff",
-        fontFamily: "Roboto, system-ui, sans-serif",
+        padding: "32px 24px 64px",
+        fontFamily: "var(--font-sans, system-ui, sans-serif)",
       }}
     >
-      {/* ════════════════════════════════════════════════════════════
-          MASTHEAD
-          ════════════════════════════════════════════════════════════ */}
-      <header style={{ textAlign: "center", padding: "30px 0 0" }}>
-        {/* Eyebrow dateline */}
-        <p
-          style={{
-            fontFamily: "Roboto, system-ui, sans-serif",
-            fontSize: "11px",
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            color: "#6b7280",
-            margin: "0 0 8px 0",
-          }}
-        >
-          Tuesday, April 15, 2025
-        </p>
-
-        {/* Nameplate */}
-        <h1
-          style={{
-            fontFamily: 'Georgia, "Palatino Linotype", Palatino, serif',
-            fontSize: "48px",
-            fontWeight: 700,
-            color: "#084A51",
-            margin: 0,
-            letterSpacing: "-0.025em",
-            lineHeight: 1,
-          }}
-        >
-          Acadia Media Monitor
-        </h1>
-
-        {/* Double rule — classic broadsheet masthead separator */}
-        <div style={{ margin: "12px 0 0" }}>
-          <hr
+      {/* ── Page header ── */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "16px",
+          marginBottom: "28px",
+        }}
+      >
+        <div>
+          <h1
             style={{
-              border: "none",
-              borderTop: "3px solid #084A51",
-              margin: "0 0 3px",
+              fontSize: "24px",
+              fontWeight: 700,
+              color: "var(--foreground)",
+              margin: "0 0 4px 0",
+              letterSpacing: "-0.015em",
             }}
-          />
-          <hr
+          >
+            Analytics Dashboard
+          </h1>
+          <p
             style={{
-              border: "none",
-              borderTop: "1px solid #084A51",
+              fontSize: "14px",
+              color: "var(--muted-foreground)",
               margin: 0,
             }}
-          />
+          >
+            Media volume, coverage trends, and key metrics
+          </p>
         </div>
 
-        {/* Summary strip */}
-        <p
-          style={{
-            fontFamily: "Roboto, system-ui, sans-serif",
-            fontSize: "12px",
-            color: "#4b5563",
-            margin: "8px 0 14px",
-            letterSpacing: "0.03em",
-          }}
-        >
-          Today:{" "}
-          <strong style={{ color: "#032930" }}>
-            {demoKpis.totalItems} items
-          </strong>{" "}
-          monitored
-          {" · "}
-          <strong style={{ color: "#F56A00" }}>{flaggedCount} flagged</strong>
-          {" · "}
-          <strong style={{ color: "#084A51" }}>
-            {acadiaMentions} Acadia mentions
-          </strong>
-        </p>
-      </header>
+        {/* Date range selector */}
+        <DateRangeSelector
+          activePreset={activePreset}
+          customFrom={customFrom}
+          customTo={customTo}
+          onPreset={handlePreset}
+          onCustomFrom={setCustomFrom}
+          onCustomTo={setCustomTo}
+        />
+      </div>
 
-      {/* Heavy rule below masthead, above content */}
-      {THICK_RULE}
-
-      {/* ════════════════════════════════════════════════════════════
-          ABOVE-THE-FOLD: HERO  +  SECONDARIES  +  SIDEBAR
-          Layout: [Hero 5fr] [Secondaries 3fr] [Sidebar ~260px]
-          ════════════════════════════════════════════════════════════ */}
+      {/* ── KPI cards — 4-col row ── */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "5fr 3fr 260px",
-          gap: "0",
-          marginTop: "26px",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "16px",
+          marginBottom: "28px",
         }}
       >
-        {/* ── Hero column ── */}
-        <div
-          style={{
-            paddingRight: "28px",
-            borderRight: "1px solid #cbd5e0",
-          }}
-        >
-          <HeroStory />
-        </div>
-
-        {/* ── Secondary stories column ── */}
-        <div
-          style={{
-            paddingLeft: "28px",
-            paddingRight: "28px",
-            borderRight: "1px solid #cbd5e0",
-          }}
-        >
-          {secondaryArticles.map((article, idx) => (
-            <SecondaryStory
-              key={article.id}
-              article={article}
-              dividerTop={idx > 0}
-            />
-          ))}
-        </div>
-
-        {/* ── Sidebar column ── */}
-        <Sidebar />
+        {kpis.map((kpi) => (
+          <KpiCard key={kpi.title} {...kpi} />
+        ))}
       </div>
 
-      {/* ════════════════════════════════════════════════════════════
-          SECTION BREAK
-          ════════════════════════════════════════════════════════════ */}
-      <div style={{ marginTop: "28px" }}>{THICK_RULE}</div>
-
-      {/* ════════════════════════════════════════════════════════════
-          SECTION COLUMNS — newspaper multi-column layout
-          ════════════════════════════════════════════════════════════ */}
-      {sectionEntries.length > 0 && (
-        <section style={{ marginTop: "26px" }}>
+      {/* ── Volume trends chart — full width ── */}
+      <Card style={{ marginBottom: "28px" }}>
+        <CardHeader>
+          <CardTitle
+            style={{ fontSize: "15px", fontWeight: 600, color: "var(--foreground)" }}
+          >
+            Volume Trends
+          </CardTitle>
+          <p style={{ fontSize: "13px", color: "var(--muted-foreground)", margin: "2px 0 0 0" }}>
+            Daily article counts — click a data point to drill down
+          </p>
+        </CardHeader>
+        <CardContent>
+          <SelectedDayBanner
+            day={selectedDay}
+            onClear={() => setSelectedDay(null)}
+          />
+          <div style={{ height: "300px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={demoVolumeData}
+                margin={{ top: 8, right: 16, left: 0, bottom: 8 }}
+                onClick={(payload: Record<string, unknown> | null) => {
+                  const ap = (payload as { activePayload?: { payload: (typeof demoVolumeData)[0] }[] })?.activePayload;
+                  if (ap && ap.length > 0) {
+                    setSelectedDay(ap[0].payload);
+                  }
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--border)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: "#64748b" } as Record<string, unknown>}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={
+                    {
+                      fontSize: 11,
+                      fill: "var(--muted-foreground)",
+                    } as Record<string, unknown>
+                  }
+                  axisLine={false}
+                  tickLine={false}
+                  width={32}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "6px",
+                    fontSize: "12px",
+                    color: "var(--foreground)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                  }}
+                  labelStyle={{
+                    fontWeight: 600,
+                    marginBottom: "4px",
+                    color: "var(--foreground)",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#4F46E5"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: "#4F46E5", strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                  name="Total"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="primary"
+                  stroke="#059669"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "#059669", strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                  name="Primary Mentions"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="competitor"
+                  stroke="#F59E0B"
+                  strokeWidth={2}
+                  strokeDasharray="4 2"
+                  dot={{ r: 3, fill: "#F59E0B", strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                  name="Competitor"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Chart legend */}
           <div
             style={{
-              columns: "3 340px",
-              columnGap: "0",
+              display: "flex",
+              gap: "20px",
+              marginTop: "12px",
+              justifyContent: "center",
             }}
           >
-            {sectionEntries.map(([sectionName, articles], sectionIdx) => (
+            {[
+              { color: "#4F46E5", label: "Total", dash: false },
+              { color: "#059669", label: "Primary Mentions", dash: false },
+              { color: "#F59E0B", label: "Competitor", dash: true },
+            ].map(({ color, label, dash }) => (
               <div
-                key={sectionName}
-                style={{
-                  breakInside: "avoid-column",
-                  pageBreakInside: "avoid",
-                  marginBottom: "26px",
-                  paddingLeft: sectionIdx > 0 ? "24px" : "0",
-                  paddingRight: "24px",
-                  borderLeft:
-                    sectionIdx > 0 ? "1px solid #cbd5e0" : undefined,
-                }}
+                key={label}
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
               >
-                {/* Section heading */}
-                <div style={{ marginBottom: "11px" }}>
-                  <h3
-                    style={{
-                      fontFamily: "Roboto, system-ui, sans-serif",
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      letterSpacing: "0.14em",
-                      textTransform: "uppercase",
-                      color: "#084A51",
-                      margin: "0 0 4px 0",
-                    }}
-                  >
-                    {sectionName}
-                  </h3>
-                  <hr
-                    style={{
-                      border: "none",
-                      borderTop: "2px solid #084A51",
-                      margin: 0,
-                    }}
+                <svg width="20" height="10">
+                  <line
+                    x1="0"
+                    y1="5"
+                    x2="20"
+                    y2="5"
+                    stroke={color}
+                    strokeWidth="2"
+                    strokeDasharray={dash ? "4 2" : undefined}
                   />
-                </div>
-
-                {/* Articles within section */}
-                {articles.map((article) => (
-                  <SectionArticle key={article.id} article={article} />
-                ))}
+                </svg>
+                <span style={{ fontSize: "12px", color: "var(--muted-foreground)" }}>
+                  {label}
+                </span>
               </div>
             ))}
           </div>
-        </section>
-      )}
+        </CardContent>
+      </Card>
 
-      {/* ════════════════════════════════════════════════════════════
-          FOOTER RULE
-          ════════════════════════════════════════════════════════════ */}
-      <div style={{ marginTop: "36px" }}>
-        {THICK_RULE}
-        <p
-          style={{
-            fontFamily: "Roboto, system-ui, sans-serif",
-            fontSize: "10px",
-            color: "#9ca3af",
-            margin: "8px 0 0",
-            textAlign: "center",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-          }}
-        >
-          Acadia Pharmaceuticals · Media Monitoring · Confidential
-        </p>
+      {/* ── Lower grid: section distribution + tables (2-col) ── */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "24px",
+        }}
+      >
+        {/* Section distribution — horizontal BarChart */}
+        <Card>
+          <CardHeader>
+            <CardTitle
+              style={{ fontSize: "15px", fontWeight: 600, color: "var(--foreground)" }}
+            >
+              Section Distribution
+            </CardTitle>
+            <p
+              style={{
+                fontSize: "13px",
+                color: "var(--muted-foreground)",
+                margin: "2px 0 0 0",
+              }}
+            >
+              Articles per section — click a bar to explore
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div style={{ height: "280px" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={demoSectionDistribution}
+                  layout="vertical"
+                  margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+                  onClick={(payload: Record<string, unknown> | null) => {
+                    const ap = (payload as { activePayload?: { payload: (typeof demoSectionDistribution)[0] }[] })?.activePayload;
+                    if (ap && ap.length > 0) {
+                      console.log("Section clicked:", ap[0].payload.section, ap[0].payload.count);
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--border)"
+                    horizontal={false}
+                  />
+                  <XAxis
+                    type="number"
+                    tick={
+                      {
+                        fontSize: 11,
+                        fill: "var(--muted-foreground)",
+                      } as Record<string, unknown>
+                    }
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="section"
+                    width={100}
+                    tick={
+                      {
+                        fontSize: 11,
+                        fill: "var(--muted-foreground)",
+                      } as Record<string, unknown>
+                    }
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                      color: "var(--foreground)",
+                    }}
+                    cursor={{ fill: "rgba(79,70,229,0.06)" }}
+                  />
+                  <Bar
+                    dataKey="count"
+                    fill="#4F46E5"
+                    radius={[0, 3, 3, 0]}
+                    name="Articles"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Right column: two tables stacked */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          {/* Top Outlets */}
+          <Card style={{ flex: 1 }}>
+            <CardHeader>
+              <CardTitle
+                style={{ fontSize: "15px", fontWeight: 600, color: "var(--foreground)" }}
+              >
+                Top Outlets
+              </CardTitle>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "var(--muted-foreground)",
+                  margin: "2px 0 0 0",
+                }}
+              >
+                Click column headers to sort
+              </p>
+            </CardHeader>
+            <CardContent>
+              <OutletsTable />
+            </CardContent>
+          </Card>
+
+          {/* Top Entities / Competitors */}
+          <Card style={{ flex: 1 }}>
+            <CardHeader>
+              <CardTitle
+                style={{ fontSize: "15px", fontWeight: 600, color: "var(--foreground)" }}
+              >
+                Top Entities / Competitors
+              </CardTitle>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "var(--muted-foreground)",
+                  margin: "2px 0 0 0",
+                }}
+              >
+                By mention count in period
+              </p>
+            </CardHeader>
+            <CardContent>
+              <CompetitorsTable />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

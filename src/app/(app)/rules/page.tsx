@@ -20,9 +20,9 @@ import {
 import { demoRules, demoSections } from "@/lib/demo-data";
 
 const demoEntities = [
-  { name: "Acadia Pharmaceuticals", type: "company", aliases: ["Acadia", "ACAD"], role: "primary" },
-  { name: "DAYBUE", type: "product", aliases: ["trofinetide"], role: "primary" },
-  { name: "NUPLAZID", type: "product", aliases: ["pimavanserin"], role: "primary" },
+  { name: "MedCorp Pharmaceuticals", type: "company", aliases: ["MedCorp", "MCPH"], role: "primary" },
+  { name: "DOPAVAIL", type: "product", aliases: ["compound-alpha"], role: "primary" },
+  { name: "NEUREX", type: "product", aliases: ["compound-beta"], role: "primary" },
   { name: "Neuren Pharmaceuticals", type: "competitor", aliases: ["Neuren"], role: "competitor" },
   { name: "Biogen", type: "competitor", aliases: [], role: "competitor" },
   { name: "Bristol Myers Squibb", type: "competitor", aliases: ["BMS"], role: "competitor" },

@@ -21,7 +21,7 @@ const mockDigest: DigestData = {
     {
       section: {
         id: "s2",
-        name: "Acadia Corporate and Product News",
+        name: "Corporate & Product News",
         slug: "acadia-corporate",
         display_order: 1,
         is_active: true,
@@ -93,7 +93,7 @@ describe("renderDigestHtml", () => {
   it("should render valid HTML with title", () => {
     const html = renderDigestHtml(mockDigest);
     expect(html).toContain("<html");
-    expect(html).toContain("Acadia Media Monitor");
+    expect(html).toContain("Media Monitor");
     expect(html).toContain("April 15, 2025");
   });
 
@@ -129,7 +129,7 @@ describe("renderDigestHtml", () => {
 describe("renderDigestMarkdown", () => {
   it("should render Markdown with title", () => {
     const md = renderDigestMarkdown(mockDigest);
-    expect(md).toContain("# Acadia Media Monitor");
+    expect(md).toContain("# Media Monitor");
   });
 
   it("should render section headings as h2", () => {

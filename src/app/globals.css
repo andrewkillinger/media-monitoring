@@ -24,14 +24,6 @@
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-border: var(--sidebar-border);
-  --color-tangerine: #F56A00;
-  --color-marigold: #FFBA0D;
-  --color-carrot: #F79400;
-  --color-amber-brand: #511706;
-  --color-turquoise: #068798;
-  --color-glacier: #6BC8C7;
-  --color-blue-spruce: #084A51;
-  --color-midnight: #032930;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -44,28 +36,28 @@
 :root {
   --radius: 0.375rem;
   --background: #ffffff;
-  --foreground: #032930;
+  --foreground: #0f172a;
   --card: #ffffff;
-  --card-foreground: #032930;
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #032930;
-  --primary: #084A51;
+  --popover-foreground: #0f172a;
+  --primary: #1e293b;
   --primary-foreground: #ffffff;
-  --secondary: #f0f7f7;
-  --secondary-foreground: #084A51;
-  --muted: #f5f8f8;
-  --muted-foreground: #4a6b6f;
-  --accent: #068798;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e293b;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #4F46E5;
   --accent-foreground: #ffffff;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
-  --border: #d4e4e6;
-  --input: #d4e4e6;
-  --ring: #068798;
-  --sidebar: #084A51;
-  --sidebar-foreground: #c8e0e2;
-  --sidebar-accent: #0a5d66;
-  --sidebar-border: #0a5d66;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #4F46E5;
+  --sidebar: #1e293b;
+  --sidebar-foreground: #cbd5e1;
+  --sidebar-accent: #334155;
+  --sidebar-border: #334155;
 }
 
 @layer base {

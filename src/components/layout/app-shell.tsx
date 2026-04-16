@@ -5,31 +5,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
   Newspaper,
-  FileText,
-  AlertTriangle,
   BarChart3,
+  ListFilter,
   Settings2,
-  Database,
+  Rss,
   Shield,
   Menu,
   X,
-  Activity,
+  Globe,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/feed", label: "Coverage Feed", icon: Newspaper },
-  { href: "/digest", label: "Daily Digest", icon: FileText },
-  { href: "/alerts", label: "Alerts & Flags", icon: AlertTriangle },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/today", label: "Today's News", icon: Newspaper },
+  { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
+  { href: "/feed", label: "Feed", icon: ListFilter },
 ];
 
 const adminItems = [
   { href: "/rules", label: "Rules & Taxonomy", icon: Settings2 },
-  { href: "/sources", label: "Sources", icon: Database },
-  { href: "/admin", label: "Admin", icon: Shield },
+  { href: "/sources", label: "Sources & Ingestion", icon: Rss },
+  { href: "/admin", label: "Administration", icon: Shield },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -38,35 +34,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Mobile overlay — Acadia midnight */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 lg:hidden"
-          style={{ backgroundColor: "rgba(3, 41, 48, 0.75)" }}
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-64 bg-[var(--sidebar)] border-r border-[var(--sidebar-border)] flex flex-col transition-transform lg:translate-x-0 lg:static lg:z-auto",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Tangerine accent line at top of sidebar */}
-        <div style={{ height: "4px", backgroundColor: "#F56A00", flexShrink: 0 }} />
+        <div className="h-1 bg-[var(--accent)] flex-shrink-0" />
 
-        {/* Brand header */}
         <div className="flex items-center gap-2 px-4 h-14 border-b border-[var(--sidebar-border)]">
-          <Activity className="h-5 w-5" style={{ color: "#6BC8C7" }} />
-          <span className="font-semibold text-sm" style={{ color: "#ffffff" }}>
-            Acadia Media Monitor
+          <Globe className="h-5 w-5 text-[var(--accent)]" />
+          <span className="font-semibold text-sm text-white">
+            Media Monitor
           </span>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="ml-auto lg:hidden p-1"
-            style={{ color: "#c8e0e2" }}
+            className="ml-auto lg:hidden p-1 text-[var(--sidebar-foreground)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -83,29 +73,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  )}
-                  style={
                     isActive
-                      ? {
-                          backgroundColor: "#0d6b76",
-                          color: "#ffffff",
-                        }
-                      : {
-                          color: "#c8e0e2",
-                        }
-                  }
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.backgroundColor = "#0a5d66";
-                      (e.currentTarget as HTMLElement).style.color = "#ffffff";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.backgroundColor = "";
-                      (e.currentTarget as HTMLElement).style.color = "#c8e0e2";
-                    }
-                  }}
+                      ? "bg-[var(--sidebar-accent)] text-white"
+                      : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-white"
+                  )}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
                   {item.label}
@@ -124,29 +95,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   key={item.href}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                  style={
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
                     isActive
-                      ? {
-                          backgroundColor: "#0d6b76",
-                          color: "#ffffff",
-                        }
-                      : {
-                          color: "#c8e0e2",
-                        }
-                  }
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.backgroundColor = "#0a5d66";
-                      (e.currentTarget as HTMLElement).style.color = "#ffffff";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      (e.currentTarget as HTMLElement).style.backgroundColor = "";
-                      (e.currentTarget as HTMLElement).style.color = "#c8e0e2";
-                    }
-                  }}
+                      ? "bg-[var(--sidebar-accent)] text-white"
+                      : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-white"
+                  )}
                 >
                   <item.icon className="h-4 w-4 shrink-0" />
                   {item.label}
@@ -155,38 +109,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </div>
         </nav>
-
-        <div
-          className="px-4 py-3 border-t border-[var(--sidebar-border)] text-xs"
-          style={{ color: "#6BC8C7" }}
-        >
-          Internal Use Only
-        </div>
       </aside>
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-14 border-b border-[var(--border)] flex items-center px-4 gap-4 bg-[var(--background)]">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-1"
-          >
+          <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-1">
             <Menu className="h-5 w-5" />
           </button>
           <h1 className="text-sm font-semibold text-[var(--foreground)]">
             {[...navItems, ...adminItems].find((i) =>
               pathname.startsWith(i.href)
-            )?.label || "Dashboard"}
+            )?.label || "Today's News"}
           </h1>
-          <div className="ml-auto flex items-center gap-2">
-            {/* Avatar — Acadia turquoise */}
-            <div
-              className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold"
-              style={{ backgroundColor: "#068798", color: "#ffffff" }}
-            >
-              AC
-            </div>
-          </div>
         </header>
         <main className="flex-1 overflow-y-auto p-6 bg-[var(--muted)]">
           {children}

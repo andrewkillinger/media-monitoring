@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Acadia Media Monitor",
-  description: "Internal media and social monitoring platform",
+  title: "Media Monitor",
+  description: "Media monitoring and coverage tracking platform",
 };
 
 export default function RootLayout({
