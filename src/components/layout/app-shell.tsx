@@ -38,10 +38,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Mobile overlay */}
+      {/* Mobile overlay — Acadia midnight */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden"
+          style={{ backgroundColor: "rgba(3, 41, 48, 0.75)" }}
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -53,58 +54,112 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
+        {/* Tangerine accent line at top of sidebar */}
+        <div style={{ height: "4px", backgroundColor: "#F56A00", flexShrink: 0 }} />
+
+        {/* Brand header */}
         <div className="flex items-center gap-2 px-4 h-14 border-b border-[var(--sidebar-border)]">
-          <Activity className="h-5 w-5 text-[var(--primary)]" />
-          <span className="font-semibold text-sm text-[var(--foreground)]">
+          <Activity className="h-5 w-5" style={{ color: "#6BC8C7" }} />
+          <span className="font-semibold text-sm" style={{ color: "#ffffff" }}>
             Acadia Media Monitor
           </span>
           <button
             onClick={() => setSidebarOpen(false)}
             className="ml-auto lg:hidden p-1"
+            style={{ color: "#c8e0e2" }}
           >
             <X className="h-4 w-4" />
           </button>
         </div>
+
         <nav className="flex-1 overflow-y-auto py-3 px-2">
           <div className="space-y-0.5">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith(item.href)
-                    ? "bg-[var(--sidebar-accent)] text-[var(--foreground)]"
-                    : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--foreground)]"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  )}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: "#0d6b76",
+                          color: "#ffffff",
+                        }
+                      : {
+                          color: "#c8e0e2",
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "#0a5d66";
+                      (e.currentTarget as HTMLElement).style.color = "#ffffff";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                      (e.currentTarget as HTMLElement).style.color = "#c8e0e2";
+                    }
+                  }}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
+
           <div className="my-3 mx-3 border-t border-[var(--sidebar-border)]" />
+
           <div className="space-y-0.5">
-            {adminItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setSidebarOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                  pathname.startsWith(item.href)
-                    ? "bg-[var(--sidebar-accent)] text-[var(--foreground)]"
-                    : "text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--foreground)]"
-                )}
-              >
-                <item.icon className="h-4 w-4" />
-                {item.label}
-              </Link>
-            ))}
+            {adminItems.map((item) => {
+              const isActive = pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: "#0d6b76",
+                          color: "#ffffff",
+                        }
+                      : {
+                          color: "#c8e0e2",
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "#0a5d66";
+                      (e.currentTarget as HTMLElement).style.color = "#ffffff";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                      (e.currentTarget as HTMLElement).style.color = "#c8e0e2";
+                    }
+                  }}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
         </nav>
-        <div className="px-4 py-3 border-t border-[var(--sidebar-border)] text-xs text-[var(--muted-foreground)]">
+
+        <div
+          className="px-4 py-3 border-t border-[var(--sidebar-border)] text-xs"
+          style={{ color: "#6BC8C7" }}
+        >
           Internal Use Only
         </div>
       </aside>
@@ -124,7 +179,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )?.label || "Dashboard"}
           </h1>
           <div className="ml-auto flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-[var(--primary)] flex items-center justify-center text-xs text-white font-medium">
+            {/* Avatar — Acadia turquoise */}
+            <div
+              className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{ backgroundColor: "#068798", color: "#ffffff" }}
+            >
               AC
             </div>
           </div>
